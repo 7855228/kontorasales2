@@ -1,0 +1,3806 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Контора · Портал ОП</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+/* iOS: шрифт ≥16px на инпутах отключает авто-зум */
+@media (max-width: 768px){
+  input, select, textarea { font-size: 16px !important; }
+}
+body{font-family:'Manrope',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background .3s,color .3s}
+
+:root{
+  /* ── ТЁМНАЯ: глубокий угольный, чистые акценты ── */
+  --bg:#111318;--bg2:#1A1D26;--bg3:#23273A;--bg4:#2E344D;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.16);
+  --lime:#FFD426;--lime-dim:rgba(255,212,38,0.11);--lime-glow:rgba(255,212,38,0.30);
+  --blue:#4FB3FF;--blue-dim:rgba(79,179,255,0.12);
+  --red:#FF5252;--red-dim:rgba(255,82,82,0.12);
+  --green:#2ECC71;--green-dim:rgba(46,204,113,0.12);
+  --gold:#FFC107;--gold-dim:rgba(255,193,7,0.12);
+  --text:#E8EDF8;--muted:#4A5470;--muted2:#7E8DB0;
+  --r:12px;--rs:8px
+}
+
+body.light{
+  /* ── СВЕТЛАЯ: максимальный контраст ── */
+  --bg:#ECEEF5;--bg2:#FFFFFF;--bg3:#DDE1EE;--bg4:#C8CEDF;
+  --border:rgba(0,0,0,0.15);--border2:rgba(0,0,0,0.28);
+  --lime:#D4A000;--lime-dim:rgba(212,160,0,0.10);--lime-glow:rgba(212,160,0,0.22);
+  --blue:#0058B0;--blue-dim:rgba(0,88,176,0.10);
+  --red:#B71C1C;--red-dim:rgba(183,28,28,0.10);
+  --green:#145A2E;--green-dim:rgba(212,160,0,0.10);
+  --gold:#7A5000;--gold-dim:rgba(122,80,0,0.10);
+  --text:#0A0E1A;--muted:#6B7490;--muted2:#2A3350
+}
+
+/* ── THEME TOGGLE ── */
+.theme-toggle{display:flex;align-items:center;gap:6px;cursor:pointer;padding:5px 10px;border-radius:var(--rs);border:1px solid var(--border2);background:var(--bg3);transition:all .15s}
+.theme-toggle:hover{border-color:var(--border2);background:var(--bg4)}
+.theme-ico{font-size:13px;line-height:1}
+.theme-sw{width:28px;height:16px;border-radius:8px;background:var(--bg4);border:1px solid var(--border2);position:relative;transition:background .25s;flex-shrink:0}
+.theme-sw::after{content:'';position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:50%;background:var(--muted);transition:transform .22s cubic-bezier(.34,1.56,.64,1),background .2s}
+body.light .theme-sw{background:var(--lime)}
+body.light .theme-sw::after{background:#fff;transform:translateX(12px)}
+
+/* ── TOTAL AREA PILL ── */
+/* ── COST TOGGLE ── */
+.cost-toggle-wrap{ position:relative;display:inline-block;width:44px;height:24px;cursor:pointer }
+.cost-toggle-wrap input{ opacity:0;width:0;height:0;position:absolute }
+.cost-toggle-track{
+  position:absolute;inset:0;border-radius:12px;
+  background:var(--bg4);border:1px solid var(--border2);
+  transition:background .2s,border-color .2s
+}
+.cost-toggle-thumb{
+  position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;
+  background:var(--muted2);transition:transform .22s cubic-bezier(.34,1.56,.64,1),background .2s
+}
+.cost-toggle-wrap input:checked ~ .cost-toggle-track{ background:var(--lime-dim);border-color:var(--lime) }
+.cost-toggle-wrap input:checked ~ .cost-toggle-track .cost-toggle-thumb{ background:var(--lime);transform:translateX(20px) }
+
+/* ── SIZE PRESETS ── */
+.size-presets{display:flex;gap:4px;flex-wrap:wrap}
+.size-preset{
+  padding:3px 9px;border-radius:5px;border:1px solid var(--border2);
+  background:var(--bg3);color:var(--muted2);
+  font-family:'Manrope',sans-serif;font-size:11px;font-weight:600;
+  cursor:pointer;transition:all .14s;white-space:nowrap
+}
+.size-preset:hover{border-color:var(--lime);color:var(--lime)}
+.size-preset.active-preset{background:var(--lime-dim);border-color:rgba(170,238,42,0.35);color:var(--lime)}
+
+/* ── COST VISIBILITY ── */
+.cost-field{ display:none }
+body.show-cost .cost-field{ display:revert }
+/* ptable needs table-cell not revert */
+.ptable .cost-field{ display:none }
+body.show-cost .ptable .cost-field{ display:table-cell }
+/* cost-row in hero — explicit to avoid cascade conflict */
+#r-cost-row{ display:none }
+body.show-cost #r-cost-row{ display:flex }
+
+/* ── PAGE SYSTEM ── */
+.page{display:none}
+.page.active{display:block;animation:fadeUp .22s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.hidden{display:none!important}
+
+/* ── HEADER ── */
+.app-header{
+  position:sticky;top:0;z-index:100;
+  background:rgba(17,19,24,0.92);backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;height:54px;
+  display:flex;align-items:center;justify-content:space-between;
+  transition:background .3s,border-color .3s
+}
+body.light .app-header{background:rgba(236,238,245,0.96);border-bottom:1px solid rgba(0,0,0,0.18)}
+
+/* Результаты — большие числа */
+body.light .mv.xl{color:var(--lime)}
+body.light .mv.lg{color:var(--blue)}
+
+/* Карточка результатов */
+body.light .result-card{border-color:rgba(0,0,0,0.18);box-shadow:0 2px 12px rgba(0,0,0,0.08)}
+body.light .result-hero{background:linear-gradient(130deg,rgba(212,160,0,0.08) 0%,transparent 60%)}
+
+/* Строки таблицы */
+body.light .ptable th{background:#DDE1EE;color:#2A3350}
+body.light .ptable td{border-bottom-color:rgba(0,0,0,0.07)}
+body.light .ptable tr.cur td{background:rgba(212,160,0,0.08)}
+body.light .ptable tr.cur td:first-child{color:var(--lime)}
+body.light .ptable .p1{color:#0A0E1A}
+body.light .mbadge{background:#C8CEDF;color:#2A3350}
+body.light .ptable tr.cur .mbadge{background:rgba(212,160,0,0.12);color:var(--lime)}
+
+/* Бейджи */
+body.light .badge.base{background:#DDE1EE;color:#2A3350;border-color:rgba(0,0,0,0.18)}
+body.light .badge.add{border-color:rgba(0,88,176,0.3)}
+body.light .badge.disc{border-color:rgba(212,160,0,0.3)}
+
+/* Опции */
+body.light .opt-row{background:#FFFFFF;border-color:rgba(0,0,0,0.15)}
+body.light .opt-row:hover{background:#F0F2FA;border-color:rgba(0,0,0,0.25)}
+body.light .opt-row.on{background:rgba(212,160,0,0.07);border-color:rgba(212,160,0,0.35)}
+body.light .opt-name{color:#0A0E1A}
+body.light .sw{background:#C8CEDF;border-color:rgba(0,0,0,0.22)}
+body.light .sw::after{background:#6B7490}
+
+/* Поля ввода */
+body.light .dim-field input,
+body.light .qty-row input{
+  background:#FFFFFF;border-color:rgba(0,0,0,0.22);color:#0A0E1A;
+  box-shadow:0 1px 3px rgba(0,0,0,0.08)
+}
+body.light .dim-field input:focus,
+body.light .qty-row input:focus{border-color:var(--lime);box-shadow:0 0 0 3px rgba(212,160,0,0.12)}
+
+/* Секция настроек */
+body.light .acard{border-color:rgba(0,0,0,0.16);box-shadow:0 1px 6px rgba(0,0,0,0.06)}
+body.light .acard-head{border-bottom-color:rgba(0,0,0,0.12)}
+body.light .ainput-wrap input{background:#FFFFFF;border-color:rgba(0,0,0,0.22);color:#0A0E1A;box-shadow:0 1px 3px rgba(0,0,0,0.07)}
+body.light .ainput-wrap input:focus{border-color:var(--lime)}
+
+/* Карточки с/с */
+body.light .cm-card{background:#FFFFFF;border-color:rgba(0,0,0,0.15)}
+body.light .cm-line .cn{color:#3A4460}
+body.light .cm-line .cv{color:#0A0E1A}
+
+/* Слайдер */
+body.light input[type="range"]{background:#C8CEDF}
+
+/* slabel */
+body.light .slabel{color:#3A4460}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-img{height:36px;width:auto;display:block;color:var(--text);transition:color .3s}
+/* SVG logo uses currentColor — no filter needed */
+.logo-descriptor{font-family:'Manrope',sans-serif;font-size:11px;font-weight:600;color:var(--muted2);border-left:1px solid var(--border2);padding-left:12px;letter-spacing:.01em}
+.nav-btn{
+  display:flex;align-items:center;gap:6px;padding:7px 14px;
+  border-radius:var(--rs);border:1px solid var(--border2);background:var(--bg3);
+  color:var(--muted2);font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s
+}
+.nav-btn:hover{border-color:var(--lime);color:var(--lime)}
+.nav-btn.ghost{border-color:transparent;background:transparent}
+.nav-btn.ghost:hover{background:var(--bg3);color:var(--text)}
+
+/* ── CALC LAYOUT ── */
+.calc-layout{display:grid;grid-template-columns:388px 1fr;min-height:calc(100vh - 54px)}
+.calc-left{padding:24px 20px;border-right:1px solid var(--border);display:flex;flex-direction:column;gap:22px}
+.calc-right{padding:24px;display:flex;flex-direction:column;gap:18px}
+
+.slabel{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:11px}
+
+/* ── PRODUCT TOGGLE ── */
+.product-toggle{display:grid;grid-template-columns:1fr 1fr;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:4px}
+.prod-btn{padding:13px 8px;border-radius:9px;border:none;background:transparent;color:var(--muted2);font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .18s;text-align:center;line-height:1.3}
+.prod-btn .ico{font-size:20px;display:block;margin-bottom:4px}
+.prod-btn .sub{font-size:10px;opacity:.65;display:block;margin-top:1px}
+.prod-btn:hover{color:var(--text)}
+.prod-btn.active{background:var(--lime);color:#111318;font-weight:700}
+
+/* ── DIMENSIONS ── */
+.dims-grid{display:grid;grid-template-columns:1fr 18px 1fr;gap:8px;align-items:center}
+.dim-sep{text-align:center;color:var(--muted);font-size:18px}
+.dim-field{position:relative}
+.dim-field input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;padding:11px 42px 11px 12px;border-radius:var(--rs);outline:none;transition:border-color .15s;-moz-appearance:textfield}
+.dim-field input::-webkit-inner-spin-button{display:none}
+.dim-field input:focus{border-color:var(--lime)}
+.dim-unit{position:absolute;right:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:11px;font-weight:600;pointer-events:none}
+.area-pill{background:var(--lime-dim);border:1px solid rgba(196,255,71,0.18);border-radius:var(--rs);padding:9px 13px;display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.area-pill .al{font-size:11px;color:var(--muted2)}
+.area-pill .av{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--lime)}
+
+/* ── QUANTITY ── */
+.qty-row{display:flex;gap:8px;align-items:center}
+.qty-row input{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;padding:10px 13px;border-radius:var(--rs);outline:none;transition:border-color .15s;-moz-appearance:textfield}
+.qty-row input::-webkit-inner-spin-button{display:none}
+.qty-row input:focus{border-color:var(--lime)}
+.qty-unit{font-size:13px;color:var(--muted2);font-weight:600;padding:0 4px;white-space:nowrap}
+
+input[type="range"]{width:100%;-webkit-appearance:none;appearance:none;height:5px;background:var(--bg4);border-radius:3px;outline:none;cursor:pointer;margin-top:10px}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--lime);border:3px solid var(--bg);box-shadow:0 0 12px var(--lime-glow);cursor:pointer;transition:box-shadow .15s}
+input[type="range"]::-webkit-slider-thumb:hover{box-shadow:0 0 22px var(--lime-glow)}
+.range-labels{display:flex;justify-content:space-between;margin-top:5px}
+.range-labels span{font-size:10px;color:var(--muted)}
+
+/* ── OPTIONS ── */
+.opts-list{display:flex;flex-direction:column;gap:4px}
+.opt-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 13px;border-radius:var(--rs);border:1px solid var(--border);
+  background:var(--bg2);cursor:pointer;transition:all .15s;user-select:none
+}
+.opt-row:hover{border-color:var(--border2);background:var(--bg3)}
+.opt-row.on{border-color:rgba(196,255,71,0.28);background:var(--lime-dim)}
+.opt-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.opt-ico{width:28px;height:28px;border-radius:6px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.opt-row.on .opt-ico{background:rgba(196,255,71,0.12)}
+.opt-texts{flex:1;min-width:0}
+.opt-name{font-size:12px;font-weight:600;color:var(--text)}
+.opt-desc{font-size:10px;color:var(--muted2);margin-top:1px}
+.opt-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+
+/* price delta chip */
+.delta-chip{
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+  padding:3px 8px;border-radius:5px;white-space:nowrap;transition:all .2s
+}
+.delta-chip.add{background:rgba(77,170,255,0.12);color:var(--blue);border:1px solid rgba(77,170,255,0.2)}
+.delta-chip.disc{background:var(--green-dim);color:var(--green);border:1px solid rgba(62,224,122,0.2)}
+.delta-chip.zero{background:var(--bg4);color:var(--muted);border:1px solid var(--border)}
+
+/* toggle switch */
+.sw{width:36px;height:20px;border-radius:10px;background:var(--bg4);border:1px solid var(--border2);position:relative;flex-shrink:0;transition:background .18s,border-color .18s}
+.sw::after{content:'';position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:var(--muted);transition:transform .2s cubic-bezier(.34,1.56,.64,1),background .18s}
+.sw.on{background:var(--lime);border-color:var(--lime)}
+.sw.on::after{background:#111318;transform:translateX(16px)}
+
+/* ── RESULT CARD ── */
+.result-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.result-hero{
+  background:linear-gradient(130deg,rgba(196,255,71,.09) 0%,rgba(196,255,71,.02) 55%,transparent 100%);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:stretch
+}
+/* LEFT metrics */
+.hero-metrics{
+  flex:1;
+  padding:22px 26px 18px;
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;gap:14px;
+  min-width:0
+}
+.metrics-top{
+  display:flex;gap:36px;align-items:flex-start
+}
+.metric .ml{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.metric .mv{font-family:'Unbounded',sans-serif;font-weight:800;letter-spacing:-.03em;line-height:1}
+.mv.xl{font-size:32px;color:var(--lime)}
+.mv.lg{font-size:26px;color:var(--blue)}
+.metric .ms{font-size:11px;color:var(--muted2);margin-top:7px}
+.metrics-cost-row{
+  gap:28px;flex-wrap:wrap;
+  padding-top:12px;border-top:1px solid var(--border)
+}
+.mono-val{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:var(--muted2);margin-top:4px}
+/* RIGHT summary panel */
+.hero-summary{
+  width:272px;flex-shrink:0;
+  display:flex;flex-direction:column
+}
+.hs-title{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px 9px;border-bottom:1px solid var(--border);
+  gap:6px
+}
+.hs-body{
+  flex:1;padding:11px 14px;display:flex;flex-direction:column;gap:5px
+}
+.hs-row{
+  display:flex;align-items:baseline;justify-content:space-between;gap:4px
+}
+.hs-row-label{ font-size:11px;color:var(--muted2);flex-shrink:0 }
+.hs-row-val{
+  font-size:11px;font-weight:700;color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  text-align:right;white-space:nowrap
+}
+.hs-divider{ height:1px;background:var(--border);margin:3px 0;flex-shrink:0 }
+.hs-opts-label{
+  font-size:9px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px
+}
+.hs-opt{
+  display:flex;align-items:center;justify-content:space-between;gap:4px;
+  padding:1px 0
+}
+.hs-opt-name{ font-size:11px;color:var(--muted2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap }
+.hs-opt-delta{ font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;white-space:nowrap }
+.hs-opt-delta.add{ color:var(--gold) }
+.hs-opt-delta.disc{ color:var(--lime) }
+.hs-empty{ font-size:11px;color:var(--muted);font-style:italic }
+.hs-total-row{
+  display:flex;align-items:center;justify-content:space-between;gap:4px;
+  padding-top:3px
+}
+.hs-total-label{ font-size:12px;font-weight:700;color:var(--text) }
+.hs-total-val{
+  font-family:'Unbounded',sans-serif;font-size:16px;font-weight:800;color:var(--lime)
+}
+
+.badges{padding:12px 28px;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:6px;min-height:44px;align-items:center}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.badge.base{background:var(--bg4);color:var(--muted2);border:1px solid var(--border)}
+.badge.add{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(77,170,255,0.2)}
+.badge.disc{background:var(--green-dim);color:var(--green);border:1px solid rgba(62,224,122,0.2)}
+
+/* ── PRICE TABLE ── */
+.tbl-header{padding:15px 28px 9px;display:flex;align-items:center;justify-content:space-between}
+.tbl-header .slabel{margin:0}
+.ptag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:5px;font-size:10px;font-weight:700;background:var(--bg4);color:var(--muted2)}
+
+.ptable{width:100%;border-collapse:collapse}
+.ptable th{padding:8px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--bg3);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.ptable th:first-child{text-align:left;padding-left:28px}
+.ptable th:last-child{padding-right:28px}
+.ptable td{padding:11px 14px;text-align:right;font-size:12px;border-bottom:1px solid rgba(255,255,255,0.04)}
+.ptable td:first-child{text-align:left;padding-left:28px;color:var(--muted2);font-size:11px}
+.ptable td:last-child{padding-right:28px}
+.ptable tr.cur td{background:rgba(196,255,71,0.06)}
+.ptable tr.cur td:first-child{color:var(--lime);font-weight:700}
+.ptable tr.cur td:first-child::before{content:'▶ ';font-size:8px;opacity:.7}
+.ptable .p1{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--text)}
+.ptable .pt{font-family:'JetBrains Mono',monospace;color:var(--muted2)}
+.mbadge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:var(--bg4);color:var(--muted2)}
+.ptable tr.cur .mbadge{background:var(--lime-dim);color:var(--lime)}
+.ptable tr:last-child td{border-bottom:none}
+
+/* ── ADMIN ── */
+.admin-wrap{max-width:900px;margin:0 auto;padding:28px 24px;display:flex;flex-direction:column;gap:20px}
+.adm-top{display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.adm-title{font-family:'Unbounded',sans-serif;font-size:20px;font-weight:800;letter-spacing:-.02em}
+.adm-title em{color:var(--lime);font-style:normal}
+.adm-sub{font-size:11px;color:var(--muted2);margin-top:5px}
+.save-btn{display:flex;align-items:center;gap:6px;padding:10px 20px;background:var(--lime);color:#111318;border:none;border-radius:var(--rs);font-family:'Manrope',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.save-btn:hover{opacity:.88}
+.save-btn.done{background:#2ECC71;color:#fff}
+
+.acard{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.acard-head{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:11px}
+.ahead-ico{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.ico-l{background:rgba(196,255,71,0.1)}.ico-b{background:rgba(77,170,255,0.1)}.ico-g{background:rgba(255,212,71,0.1)}.ico-r{background:rgba(255,96,96,0.1)}
+.ahead-title{font-size:14px;font-weight:700;color:var(--text)}
+.ahead-sub{font-size:11px;color:var(--muted2);margin-top:2px}
+.acard-body{padding:18px 22px}
+
+.afields{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:11px}
+.afield label{display:block;font-size:11px;font-weight:600;color:var(--muted2);margin-bottom:5px;line-height:1.3}
+.ainput-wrap{position:relative}
+.ainput-wrap input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;padding:10px 38px 10px 13px;border-radius:var(--rs);outline:none;transition:border-color .15s;-moz-appearance:textfield}
+.ainput-wrap input::-webkit-inner-spin-button{display:none}
+.ainput-wrap input:focus{border-color:var(--lime)}
+.asuffix{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;color:var(--muted);pointer-events:none}
+
+/* divider in admin fields */
+/* cost matrix */
+.cm-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:13px 15px}
+.cm-card .cm-tag{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.cm-card .cm-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700}
+.cm-card .cm-sub{font-size:10px;color:var(--muted2);margin-top:4px}
+
+/* ─ breakdown rows inside cm-card */
+.cm-break{margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:3px}
+.cm-line{display:flex;justify-content:space-between;font-size:10px}
+.cm-line .cn{color:var(--muted2)}
+.cm-line .cv{font-family:'JetBrains Mono',monospace;color:var(--text);font-weight:600}
+
+/* packaging */
+.pkg-single{display:flex;align-items:center;gap:12px}
+.pkg-single .ainput-wrap{width:180px}
+.pkg-single .pkg-note{font-size:12px;color:var(--muted2);line-height:1.5}
+
+/* ── LOCK BUTTON ── */
+.lock-btn{
+  display:flex;align-items:center;gap:7px;padding:9px 16px;
+  background:var(--bg3);border:1px solid var(--border2);
+  color:var(--muted2);font-family:'Manrope',sans-serif;
+  font-size:13px;font-weight:600;border-radius:var(--rs);
+  cursor:pointer;transition:all .18s
+}
+.lock-btn:hover{border-color:var(--lime);color:var(--lime)}
+.lock-btn.unlocked{border-color:rgba(62,224,122,0.4);background:rgba(62,224,122,0.08);color:var(--green)}
+
+/* ── LOCKED STATE: dim all admin inputs ── */
+/* ── PASSWORD MODAL ── */
+.pwd-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  animation:fadeUp .18s ease
+}
+.pwd-overlay.hidden{display:none}
+.pwd-modal{
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:16px;padding:28px 28px 24px;
+  width:min(360px, 90vw);
+  display:flex;flex-direction:column;gap:12px;
+  box-shadow:0 24px 60px rgba(0,0,0,0.5)
+}
+.pwd-title{font-family:'Unbounded',sans-serif;font-size:16px;font-weight:800;color:var(--text)}
+.pwd-sub{font-size:12px;color:var(--muted2)}
+.pwd-input{
+  background:var(--bg3);border:1px solid var(--border2);
+  color:var(--text);font-family:'JetBrains Mono',monospace;
+  font-size:18px;font-weight:600;padding:12px 14px;
+  border-radius:var(--rs);outline:none;width:100%;
+  transition:border-color .15s
+}
+.pwd-input:focus{border-color:var(--lime)}
+.pwd-error{font-size:12px;color:var(--red);font-weight:600}
+.pwd-error.hidden{display:none}
+.pwd-cancel{
+  flex:1;padding:10px;background:transparent;
+  border:1px solid var(--border2);color:var(--muted2);
+  border-radius:var(--rs);font-family:'Manrope',sans-serif;
+  font-size:13px;font-weight:600;cursor:pointer;transition:all .15s
+}
+.pwd-cancel:hover{border-color:var(--border2);color:var(--text)}
+.pwd-ok{
+  flex:2;padding:10px;background:var(--lime);
+  border:none;color:#111318;
+  border-radius:var(--rs);font-family:'Manrope',sans-serif;
+  font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s
+}
+.pwd-ok:hover{opacity:.88}
+
+/* ── HELP MODAL ── */
+.help-modal{
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:16px;width:min(780px,96vw);
+  max-height:88vh;display:flex;flex-direction:column;
+  box-shadow:0 28px 70px rgba(0,0,0,0.55);overflow:hidden
+}
+.help-header{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  padding:22px 26px 16px;border-bottom:1px solid var(--border);flex-shrink:0
+}
+.help-title{font-family:'Unbounded',sans-serif;font-size:15px;font-weight:800;color:var(--text)}
+.help-sub{font-size:11px;color:var(--muted2);margin-top:4px}
+.help-close{
+  width:32px;height:32px;border-radius:8px;background:var(--bg3);
+  border:1px solid var(--border);color:var(--muted2);font-size:14px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;flex-shrink:0
+}
+.help-close:hover{border-color:var(--red);color:var(--red)}
+
+/* Tabs */
+.h-tabs{
+  display:flex;gap:3px;padding:12px 16px 0;border-bottom:1px solid var(--border);
+  flex-shrink:0;overflow-x:auto;scrollbar-width:none
+}
+.h-tabs::-webkit-scrollbar{display:none}
+.h-tab{
+  padding:8px 14px;border-radius:var(--rs) var(--rs) 0 0;border:none;
+  background:transparent;color:var(--muted2);
+  font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;
+  cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;
+  transition:all .15s
+}
+.h-tab:hover{color:var(--text)}
+.h-tab.active{color:var(--lime);border-bottom-color:var(--lime);background:rgba(196,255,71,0.05)}
+
+.h-tab-content{display:none}
+.h-tab-content.active{display:block}
+
+.help-body{overflow-y:auto;padding:18px 24px;display:flex;flex-direction:column;gap:0}
+
+.h-section{padding:16px 0;border-bottom:1px solid var(--border)}
+.h-section:last-child{border-bottom:none}
+.h-section-title{
+  font-family:'Unbounded',sans-serif;font-size:12px;font-weight:700;
+  color:var(--text);margin-bottom:10px
+}
+.h-text{font-size:12px;color:var(--muted2);line-height:1.7;margin-bottom:10px}
+.h-text b{color:var(--text)}
+
+.h-formula{
+  background:var(--bg3);border:1px solid var(--border);
+  border-left:3px solid var(--lime);border-radius:0 var(--rs) var(--rs) 0;
+  padding:10px 14px;font-family:'JetBrains Mono',monospace;
+  font-size:11px;color:var(--text);margin:8px 0;line-height:1.6
+}
+
+/* Dynamic column count via CSS var */
+.h-table{
+  border:1px solid var(--border);border-radius:var(--rs);
+  overflow:hidden;font-size:12px;margin:10px 0
+}
+.h-tr{
+  display:grid;
+  grid-template-columns:1fr 80px 1fr;
+  border-bottom:1px solid rgba(255,255,255,0.04)
+}
+.h-table[style*="--hcols:2"] .h-tr{ grid-template-columns:1fr 1.5fr }
+.h-table[style*="--hcols:3"] .h-tr{ grid-template-columns:1fr 80px 1.2fr }
+[id="tab-d3"] .h-table:nth-of-type(1) .h-tr{ grid-template-columns:1.2fr 70px 70px }
+[id="tab-pricing"] .h-table:nth-of-type(2) .h-tr{ grid-template-columns:130px 1fr 90px }
+.h-tr:last-child{border-bottom:none}
+.h-tr > div{padding:8px 12px;color:var(--text);line-height:1.5}
+.h-tr > div:not(:last-child){border-right:1px solid var(--border)}
+.h-tr.h-head > div{
+  background:var(--bg3);color:var(--muted);
+  font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase
+}
+.h-tr.h-highlight{background:rgba(196,255,71,0.04)}
+.h-tr.h-highlight > div{color:var(--text)}
+.mono{font-family:'JetBrains Mono',monospace;font-weight:600}
+.lime{color:var(--lime)}
+
+.h-example{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--rs);overflow:hidden;margin-top:10px
+}
+.h-ex-row{
+  display:flex;justify-content:space-between;gap:16px;
+  padding:9px 14px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:12px
+}
+.h-ex-row:last-child{border-bottom:none}
+.h-ex-row > span:first-child{color:var(--muted2);white-space:nowrap;flex-shrink:0;font-weight:600}
+.h-ex-row > span:last-child{color:var(--text);text-align:right}
+
+@media(max-width:600px){
+  .help-header{padding:16px 14px 12px}
+  .help-body{padding:12px 14px}
+  .h-formula{font-size:10px;padding:8px 11px}
+  .h-tab{font-size:11px;padding:7px 10px}
+}
+
+/* ── PRODUCT BLOCKS (vinyl / 3d) ── */
+.prod-block{
+  display:flex;flex-direction:column;gap:10px;
+  border:1px solid var(--border);border-radius:16px;overflow:hidden
+}
+.prod-block-header{
+  display:flex;align-items:center;gap:12px;
+  padding:16px 22px;
+}
+.vinyl-header{ background:linear-gradient(135deg,rgba(77,170,255,0.10) 0%,rgba(77,170,255,0.03) 100%) }
+.d3-header{    background:linear-gradient(135deg,rgba(196,255,71,0.10) 0%,rgba(196,255,71,0.03) 100%) }
+.prod-block-icon{
+  width:38px;height:38px;border-radius:10px;
+  background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0
+}
+.vinyl-header .prod-block-icon{ background:rgba(77,170,255,0.12) }
+.d3-header    .prod-block-icon{ background:rgba(196,255,71,0.12) }
+.prod-block-title{font-family:'Unbounded',sans-serif;font-size:13px;font-weight:800;color:var(--text)}
+.prod-block-sub{font-size:11px;color:var(--muted2);margin-top:3px}
+.prod-inner{border-radius:10px;border-left:3px solid var(--border) !important;margin:0 10px}
+.prod-inner:last-child{margin-bottom:10px}
+.vinyl-header ~ .prod-inner{ border-left-color:var(--blue) !important }
+.d3-header    ~ .prod-inner{ border-left-color:var(--lime) !important }
+
+/* admin preview table */
+.ptable.admin th,.ptable.admin td{padding:10px 14px}
+.ptable.admin th:first-child,.ptable.admin td:first-child{padding-left:22px}
+.ptable.admin th:last-child,.ptable.admin td:last-child{padding-right:22px}
+
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+
+/* ══════════════════════════════════════════════
+   MOBILE / RESPONSIVE
+══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* Header */
+  .app-header{ padding:0 10px; height:52px; gap:6px }
+  .logo-img{ height:24px }
+  .logo-descriptor{ display:none }
+  .nav-btn{ padding:6px 10px; font-size:11px; gap:4px }
+  .theme-toggle{ padding:4px 8px; gap:5px }
+  /* Portal nav on tablet */
+  .pnav-btn{ padding:6px 11px; font-size:12px }
+  .portal-nav{ padding:0 8px; gap:1px }
+
+  /* Calc layout — stack vertically */
+  .calc-layout{
+    grid-template-columns: 1fr;
+    min-height: unset;
+  }
+
+  .calc-left{
+    padding: 16px 14px;
+    gap: 18px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .calc-right{
+    padding: 14px;
+    gap: 14px;
+  }
+
+  /* Product toggle */
+  .prod-btn{ padding: 10px 6px; font-size: 11px }
+  .prod-btn .ico{ font-size: 18px; margin-bottom: 3px }
+
+  /* Dimensions */
+  .dim-field input{ font-size: 18px; padding: 10px 38px 10px 11px }
+
+  /* Qty inputs */
+  .qty-row input{ font-size: 18px; padding: 9px 11px }
+
+  /* Options list */
+  .opt-row{ padding: 10px 11px }
+  .opt-name{ font-size: 12px }
+  .opt-desc{ font-size: 10px }
+  .delta-chip{ font-size: 10px; padding: 2px 6px }
+
+  /* Result hero — tablet: keep side-by-side, shrink summary */
+  .result-hero{ flex-direction: row }
+  .hero-metrics{ padding: 16px 18px 14px }
+  .hero-summary{ width: 210px }
+  .metrics-top{ gap: 22px }
+  .mv.xl{ font-size: 26px }
+  .mv.lg{ font-size: 22px }
+  .metric .ms{ font-size: 10px }
+  .hs-body{ padding: 9px 11px; gap: 4px }
+  .hs-row-label, .hs-row-val{ font-size: 10px }
+  .hs-opt-name, .hs-opt-delta{ font-size: 10px }
+  .hs-total-label{ font-size: 11px }
+  .hs-total-val{ font-size: 14px }
+
+  /* Badges */
+  .badges{ padding: 10px 14px; gap: 5px }
+  .badge{ font-size: 10px; padding: 3px 7px }
+
+  /* Price table header */
+  .tbl-header{ padding: 12px 14px 8px }
+
+  /* Price table — scrollable, compact */
+  .result-card > div:last-of-type{ overflow-x: auto }
+  .ptable th, .ptable td{ padding: 9px 10px; font-size: 11px }
+  .ptable th:first-child, .ptable td:first-child{ padding-left: 14px }
+  .ptable th:last-child,  .ptable td:last-child { padding-right: 14px }
+  .mbadge{ font-size: 9px; padding: 2px 5px }
+
+  /* Admin page */
+  .admin-wrap{ padding: 16px 14px; gap: 16px }
+  .adm-top{ flex-direction: column; align-items: flex-start; gap: 12px }
+  .adm-title{ font-size: 16px }
+  .save-btn{ width: 100%; justify-content: center }
+
+  .acard-head{ padding: 14px 16px }
+  .acard-body{ padding: 14px 16px }
+
+  /* Cost matrix — 2 columns on mobile */
+  
+
+  /* Markup grid — stack */
+  .acard-body > div[style*="grid-template-columns:1fr 1fr"]{
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  /* Admin preview table — scrollable */
+  .acard-body[style*="padding:0"]{ overflow-x: auto }
+  .ptable.admin th,.ptable.admin td{ padding: 8px 10px; font-size: 10px }
+  .ptable.admin th:first-child,.ptable.admin td:first-child{ padding-left: 14px }
+  .ptable.admin th:last-child,.ptable.admin td:last-child{ padding-right: 14px }
+
+  /* Packaging single row */
+  .pkg-single{ flex-direction: column; align-items: flex-start; gap: 8px }
+  .pkg-single .ainput-wrap{ width: 100% }
+
+  /* Size presets — wrap on mobile */
+  .size-presets{ gap: 3px }
+  .size-preset{ font-size: 10px; padding: 3px 7px }
+
+  /* Help modal — full screen on mobile */
+  .help-modal{ width: 100vw; max-height: 92vh; border-radius: 14px 14px 0 0 }
+  .pwd-overlay{ align-items: flex-end }
+  .h-tabs{ padding: 10px 12px 0; gap: 2px }
+  .h-tab{ font-size: 10px; padding: 6px 8px }
+  .help-body{ padding: 14px 14px }
+
+  /* Product blocks in admin — remove inner padding */
+  .prod-inner{ margin: 0 6px }
+  .prod-inner:last-child{ margin-bottom: 6px }
+
+}
+
+@media (max-width: 480px) {
+
+  /* Result hero — phone: stack vertically */
+  .result-hero{ flex-direction: column }
+  .hero-metrics{
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px 12px
+  }
+  .metrics-top{ gap: 20px }
+  .hero-summary{
+    width: 100%;
+    border-left: none;
+    border-top: none
+  }
+  .hs-title{
+    padding: 9px 14px 8px;
+    flex-direction: row
+  }
+  /* Summary body: 2-col grid on phone for compact display */
+  .hs-body{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 8px;
+    padding: 10px 14px
+  }
+  .hs-divider{ grid-column: 1 / -1 }
+  #summary-opts-wrap{ grid-column: 1 / -1 }
+  .hs-total-row{ grid-column: 1 / -1; padding-top: 2px }
+  .hs-total-val{ font-size: 16px }
+  .mv.xl{ font-size: 26px }
+  .mv.lg{ font-size: 22px }
+
+  /* On very small screens, show only 3 cols in price table */
+  .ptable th:last-child,
+  .ptable td:last-child{ display: none }
+
+  
+
+  /* Slim the header down */
+  .app-header{ height: 48px; padding:0 8px; gap: 4px }
+  .logo-img{ height: 22px }
+  .portal-nav{ flex: 1; min-width: 0 }
+
+  /* Make option deltas smaller */
+  .opt-right{ gap: 5px }
+  .delta-chip{ display: none }
+
+  /* Admin fields single column */
+  .afields{ grid-template-columns: 1fr 1fr }
+
+  /* KB grid on mobile */
+  
+  .kb-wrap{ padding: 16px 14px }
+  .kb-section{ padding: 16px 0 }
+  .mat-wrap{ padding: 16px 14px }
+  .mat-hero{ flex-direction: column; padding: 18px 16px; gap: 12px }
+  .mat-hero-ico{ font-size: 28px }
+  /* Tables scroll on mobile */
+  .kb-table-wrap{ overflow-x: auto }
+  .kb-table{ min-width: 460px }
+
+}
+
+/* ══ PORTAL NAV ══ */
+.portal-nav{
+  display:flex;gap:2px;align-items:center;flex:1;justify-content:center;
+  padding:0 16px
+}
+.pnav-btn{
+  padding:7px 16px;border-radius:8px;border:none;
+  background:transparent;color:var(--muted2);
+  font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .15s;white-space:nowrap
+}
+.pnav-btn:hover{background:var(--bg3);color:var(--text)}
+.pnav-btn.active{background:var(--lime-dim);color:var(--lime);border:1px solid rgba(184,240,38,0.2)}
+body.light .pnav-btn.active{background:var(--lime-dim);color:var(--lime);border:1px solid rgba(212,160,0,0.3)}
+
+/* ══ KB PAGE ══ */
+.kb-wrap{max-width:820px;margin:0 auto;padding:28px 24px;display:flex;flex-direction:column;gap:0}
+.kb-section{
+  border-bottom:1px solid var(--border);padding:24px 0
+}
+.kb-section:last-child{border-bottom:none}
+.kb-h2{
+  font-family:'Unbounded',sans-serif;font-size:13px;font-weight:700;
+  color:var(--lime);text-transform:uppercase;letter-spacing:.06em;
+  margin:18px 0 10px;
+}
+.kb-h2:first-child{margin-top:0}
+.kb-text{font-size:13px;color:var(--muted2);line-height:1.8}
+.kb-text b{color:var(--text);font-weight:700}
+.kb-tag{
+  display:inline-block;padding:2px 8px;border-radius:4px;
+  background:var(--bg3);border:1px solid var(--border);
+  font-size:11px;font-weight:600;color:var(--muted2);margin:2px 2px
+}
+.kb-tag.hi{background:var(--lime-dim);border-color:rgba(184,240,38,0.2);color:var(--lime)}
+body.light .kb-tag.hi{background:var(--lime-dim);border-color:rgba(212,160,0,0.3);color:var(--lime)}
+.kb-steps{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.kb-step{
+  display:flex;gap:12px;align-items:flex-start;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:10px;padding:12px 14px
+}
+.kb-step-n{
+  width:26px;height:26px;border-radius:7px;
+  background:var(--lime-dim);border:1px solid rgba(184,240,38,0.2);
+  color:var(--lime);font-size:12px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0
+}
+body.light .kb-step-n{background:var(--lime-dim);border-color:rgba(212,160,0,0.3);color:var(--lime)}
+.kb-step-body{flex:1}
+.kb-step-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
+.kb-step-desc{font-size:12px;color:var(--muted2);line-height:1.6}
+.kb-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}
+.kb-table th{
+  background:var(--bg3);color:var(--muted2);font-weight:700;
+  text-align:left;padding:8px 12px;border-bottom:1px solid var(--border)
+}
+.kb-table td{
+  padding:8px 12px;border-bottom:1px solid var(--border);
+  color:var(--text);vertical-align:top;line-height:1.6
+}
+.kb-table tr:last-child td{border-bottom:none}
+.kb-list{list-style:none;display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.kb-list li{
+  display:flex;gap:8px;font-size:13px;color:var(--muted2);line-height:1.6
+}
+.kb-list li::before{content:'→';color:var(--lime);flex-shrink:0;font-weight:700}
+.kb-warn{
+  background:rgba(255,200,0,0.08);border:1px solid rgba(255,200,0,0.25);
+  border-radius:8px;padding:10px 14px;margin:10px 0;
+  font-size:12px;color:var(--muted2);line-height:1.7
+}
+.kb-warn b{color:var(--gold)}
+
+/* ══ MATERIALS PAGE ══ */
+.mat-wrap{max-width:820px;margin:0 auto;padding:28px 24px;display:flex;flex-direction:column;gap:14px}
+@media (max-width:768px){
+  .portal-nav{gap:1px;padding:0 6px}
+  .pnav-btn{padding:6px 9px;font-size:11px}
+  .kb-wrap,.mat-wrap{padding:16px 14px}
+  
+  .mat-hero{padding:20px 18px;gap:14px}
+  .mat-hero-ico{font-size:28px}
+}
+@media (max-width:480px){
+  .portal-nav{overflow-x:auto;justify-content:flex-start;padding:0 4px;-webkit-overflow-scrolling:touch}
+  .portal-nav::-webkit-scrollbar{display:none}
+  .portal-nav::-webkit-scrollbar{display:none}
+  .pnav-btn{font-size:10px;padding:5px 8px;white-space:nowrap}
+}
+
+/* ══ ORDER SUMMARY ══ */
+.summary-inline{
+  border-top:1px solid var(--border);
+}
+.summary-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 18px;border-bottom:1px solid var(--border)
+}
+.summary-head-title{
+  font-family:'Unbounded',sans-serif;font-size:12px;font-weight:800;
+  color:var(--text);letter-spacing:.02em
+}
+.summary-body{ padding:16px 18px;display:flex;flex-direction:column;gap:10px }
+.summary-row{
+  display:flex;align-items:baseline;justify-content:space-between;gap:8px
+}
+.summary-label{
+  font-size:12px;color:var(--muted2);white-space:nowrap;flex-shrink:0
+}
+.summary-dots{
+  flex:1;border-bottom:1px dotted var(--border);margin:0 6px;margin-bottom:3px
+}
+.summary-val{
+  font-size:13px;font-weight:700;color:var(--text);
+  font-family:'JetBrains Mono',monospace;white-space:nowrap
+}
+.summary-divider{
+  height:1px;background:var(--border);margin:4px 0
+}
+.summary-total-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0 2px
+}
+.summary-total-label{
+  font-size:13px;font-weight:700;color:var(--text)
+}
+.summary-total-val{
+  font-family:'Unbounded',sans-serif;font-size:20px;font-weight:800;color:var(--lime)
+}
+.summary-opts{ display:flex;flex-direction:column;gap:6px }
+.summary-opt{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 10px;border-radius:8px;background:var(--bg3)
+}
+.summary-opt-name{ font-size:12px;color:var(--muted2) }
+.summary-opt-delta{
+  font-size:12px;font-weight:700;font-family:'JetBrains Mono',monospace
+}
+.summary-opt-delta.add{ color:var(--gold) }
+.summary-opt-delta.disc{ color:var(--lime) }
+.summary-empty{
+  font-size:12px;color:var(--muted);text-align:center;padding:8px 0;
+  font-style:italic
+}
+.copy-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 14px;border-radius:8px;border:1px solid var(--border);
+  background:var(--bg3);color:var(--muted2);
+  font-family:'Manrope',sans-serif;font-size:11px;font-weight:700;
+  cursor:pointer;transition:all .15s;white-space:nowrap
+}
+.copy-btn:hover{ background:var(--lime-dim);border-color:var(--lime);color:var(--lime) }
+.copy-btn.copied{
+  background:var(--lime-dim);border-color:var(--lime);color:var(--lime)
+}
+@media(max-width:480px){
+  .summary-total-val{ font-size:16px }
+  .summary-head{ padding:10px 14px }
+  .summary-body{ padding:12px 14px }
+}
+
+/* ── VIEWS ROW ── */
+.views-row{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);
+  padding:10px 14px;gap:12px
+}
+.views-label-wrap{ flex:1;min-width:0 }
+.views-hint{ font-size:11px;color:var(--muted2);margin-top:2px }
+.views-ctrl{
+  display:flex;align-items:center;gap:6px;flex-shrink:0
+}
+.views-btn{
+  width:28px;height:28px;border-radius:7px;border:1px solid var(--border);
+  background:var(--bg3);color:var(--text);font-size:16px;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .12s;line-height:1;padding:0
+}
+.views-btn:hover{ background:var(--bg4);border-color:var(--border2) }
+.views-btn:active{ transform:scale(0.93) }
+#iviews{
+  width:42px;text-align:center;
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);font-family:'JetBrains Mono',monospace;
+  font-size:18px;font-weight:700;border-radius:7px;
+  padding:4px 0;outline:none;
+  -moz-appearance:textfield
+}
+#iviews::-webkit-outer-spin-button,
+#iviews::-webkit-inner-spin-button{ -webkit-appearance:none }
+#iviews:focus{ border-color:var(--lime) }
+body.light #iviews{ background:var(--bg3);color:var(--text) }
+
+/* ══ KB ACCORDION ══ */
+.kb-accordion{ border-bottom:1px solid var(--border) }
+.kb-accordion:last-child{ border-bottom:none }
+.kb-acc-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 0;cursor:pointer;gap:12px;
+  user-select:none;-webkit-user-select:none
+}
+.kb-acc-head:hover .kb-acc-title{ color:var(--lime) }
+.kb-acc-title{
+  font-family:'Unbounded',sans-serif;font-size:13px;font-weight:800;
+  color:var(--text);transition:color .15s;line-height:1.3
+}
+.kb-acc-arrow{
+  width:22px;height:22px;border-radius:6px;background:var(--bg3);
+  border:1px solid var(--border);display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;transition:transform .2s,background .15s
+}
+.kb-acc-arrow svg{ width:10px;height:10px;stroke:var(--muted2);stroke-width:2.5;fill:none;transition:stroke .15s }
+.kb-accordion.open .kb-acc-arrow{ background:var(--lime-dim);border-color:var(--lime);transform:rotate(180deg) }
+.kb-accordion.open .kb-acc-arrow svg{ stroke:var(--lime) }
+.kb-accordion.open .kb-acc-title{ color:var(--lime) }
+.kb-acc-body{
+  display:none;padding-bottom:20px
+}
+.kb-accordion.open .kb-acc-body{ display:block }
+/* first one open by default via JS */
+
+/* ── FILM SELECTOR ── */
+.film-selector{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px
+}
+.film-btn{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:10px 8px;border-radius:10px;border:1px solid var(--border);
+  background:var(--bg2);cursor:pointer;transition:all .15s;text-align:center
+}
+.film-btn:hover{ border-color:var(--border2);background:var(--bg3) }
+.film-btn.active{
+  border-color:var(--lime);background:var(--lime-dim)
+}
+.film-ico{ font-size:18px;line-height:1 }
+.film-name{
+  font-size:11px;font-weight:700;color:var(--text);line-height:1.2
+}
+.film-sub{
+  font-size:9px;color:var(--muted2)
+}
+.film-btn.active .film-name{ color:var(--lime) }
+@media(max-width:480px){
+  .film-selector{ grid-template-columns:1fr }
+  .film-btn{ flex-direction:row;justify-content:flex-start;gap:10px;padding:8px 12px }
+  .film-ico{ font-size:20px;width:24px }
+}
+
+/* ══ MATERIALS PAGE (redesign) ══ */
+.mat-page-wrap{ padding:0 0 40px 0; max-width:900px; margin:0 auto }
+.mat-section-title{
+  font-family:'Unbounded',sans-serif;font-size:11px;font-weight:800;
+  color:var(--muted2);text-transform:uppercase;letter-spacing:.08em;
+  margin:28px 0 12px;padding:0 2px
+}
+.mat-docs-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px
+}
+.mat-doc-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:14px;
+  padding:18px 18px 14px;display:flex;flex-direction:column;gap:10px;
+  transition:border-color .15s,background .15s;position:relative;overflow:hidden
+}
+.mat-doc-card:hover{
+  border-color:var(--border2);background:var(--bg3)
+}
+.mat-doc-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  border-radius:14px 14px 0 0;background:var(--lime);opacity:0;transition:opacity .15s
+}
+.mat-doc-card:hover::before{ opacity:1 }
+.mat-doc-top{ display:flex;align-items:flex-start;gap:12px }
+.mat-doc-ico{
+  width:40px;height:40px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;font-size:20px;flex-shrink:0;background:var(--bg4);
+  border:1px solid var(--border)
+}
+.mat-doc-ico.ico-doc  { background:rgba(66,133,244,.12);border-color:rgba(66,133,244,.25) }
+.mat-doc-ico.ico-pdf  { background:rgba(234,67,53,.12); border-color:rgba(234,67,53,.25)  }
+.mat-doc-ico.ico-form { background:rgba(52,168,83,.12); border-color:rgba(52,168,83,.25)  }
+.mat-doc-ico.ico-req  { background:rgba(251,188,4,.12); border-color:rgba(251,188,4,.25)  }
+.mat-doc-name{
+  font-size:13px;font-weight:700;color:var(--text);line-height:1.35;flex:1
+}
+.mat-doc-tag{
+  display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;
+  background:var(--lime-dim);color:var(--lime);border:1px solid rgba(163,230,53,.25)
+}
+.mat-doc-hint{
+  font-size:11px;color:var(--muted2);line-height:1.6;
+  border-top:1px solid var(--border);padding-top:8px;margin-top:0
+}
+.mat-doc-actions{ display:flex;gap:8px;flex-wrap:wrap }
+.mat-doc-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:8px;font-size:11px;font-weight:700;
+  text-decoration:none;cursor:pointer;transition:all .15s;border:none;
+  white-space:nowrap
+}
+.mat-doc-btn.primary{
+  background:var(--lime);color:#0a0a0a
+}
+.mat-doc-btn.primary:hover{ filter:brightness(1.1) }
+.mat-doc-btn.secondary{
+  background:var(--bg4);color:var(--text);border:1px solid var(--border2)
+}
+.mat-doc-btn.secondary:hover{ background:var(--bg3);border-color:var(--lime) }
+
+/* Other items (non-linked) */
+.mat-other-list{ display:flex;flex-direction:column;gap:6px }
+.mat-other-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 16px;border-radius:10px;
+  background:var(--bg2);border:1px solid var(--border)
+}
+.mat-other-n{
+  width:22px;height:22px;border-radius:6px;background:var(--bg4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;color:var(--muted2);flex-shrink:0
+}
+.mat-other-ico{ font-size:16px;flex-shrink:0 }
+.mat-other-body{ flex:1 }
+.mat-other-name{ font-size:12px;font-weight:700;color:var(--text) }
+.mat-other-desc{ font-size:11px;color:var(--muted2);margin-top:2px }
+.mat-other-badge{
+  font-size:10px;font-weight:700;color:var(--muted);
+  background:var(--bg3);border:1px solid var(--border);
+  padding:2px 8px;border-radius:20px;flex-shrink:0
+}
+
+@media(max-width:480px){
+  .mat-docs-grid{ grid-template-columns:1fr }
+}
+
+/* ── KB additional styles ── */
+.kb-quote{
+  background:var(--bg3);border-left:3px solid var(--lime);
+  padding:14px 16px;border-radius:6px;font-size:13px;line-height:1.6;
+  color:var(--text);margin:10px 0;font-style:italic
+}
+.kb-price{
+  display:inline-block;background:var(--lime-dim);color:var(--lime);
+  padding:6px 12px;border-radius:8px;font-size:13px;font-weight:700;
+  margin:8px 0;border:1px solid rgba(163,230,53,.25)
+}
+.kb-subhead{
+  font-family:'Unbounded',sans-serif;font-size:13px;font-weight:700;
+  color:var(--text);margin:12px 0 6px
+}
+.kb-list.kb-list-num{ list-style:decimal;padding-left:22px }
+.kb-list.kb-list-num li::before{ content:none }
+.kb-list.kb-list-num li{ padding-left:4px }
+
+/* ── Formula tab ── */
+.h-formula{
+  background:var(--bg3);border:1px solid var(--border);border-left:3px solid var(--lime);
+  padding:12px 14px;border-radius:6px;margin:10px 0;
+  font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);line-height:1.7;
+  overflow-x:auto;white-space:normal
+}
+.h-formula-final{
+  background:var(--lime-dim);border-color:var(--lime);color:var(--text);
+  font-weight:600
+}
+.h-formula .h-op{ color:var(--muted2);font-size:11px }
+.h-formula sup{ color:var(--lime);font-weight:700 }
+.h-bullets{
+  list-style:none;padding:0;margin:8px 0;
+  display:flex;flex-direction:column;gap:6px
+}
+.h-bullets li{
+  padding:6px 12px;background:var(--bg3);border-radius:6px;
+  font-size:12px;color:var(--text);border:1px solid var(--border)
+}
+
+/* Qty input warn state — value below minimum */
+#iq.warn{
+  border-color:#f5a623;
+  box-shadow:0 0 0 2px rgba(245,166,35,.15);
+  transition:border-color .15s,box-shadow .15s
+}
+#iq.warn:focus{
+  border-color:#f5a623;
+  outline:none
+}
+
+/* ── MOBILE 480px — additional coverage ── */
+@media (max-width:480px){
+  /* Admin product blocks */
+  .prod-block{ padding:10px; margin-bottom:12px }
+  .prod-block-head{ flex-direction:column; align-items:flex-start; gap:6px }
+
+  /* Options list — stack vertically */
+  .opts-list{ grid-template-columns:1fr; gap:8px }
+  .opt-row{ padding:10px 12px }
+  .opt-label{ font-size:12px }
+  .opt-delta{ font-size:11px }
+
+  /* Dimensions grid — stack */
+  .dims-grid{ grid-template-columns:1fr 1fr; gap:8px }
+  .dim-field label{ font-size:10px }
+  .dim-field input{ font-size:13px; padding:8px }
+
+  /* Views row */
+  .views-row{ flex-direction:column; align-items:stretch; gap:8px }
+  .views-label{ font-size:11px }
+
+  /* Help tables — scrollable */
+  .h-table{ overflow-x:auto; -webkit-overflow-scrolling:touch }
+  .h-table .h-tr{ min-width:320px }
+
+  /* Formula blocks — smaller font, scrollable */
+  .h-formula{ font-size:11px; padding:10px 12px }
+  .h-bullets li{ font-size:11px; padding:6px 10px }
+  .h-example{ font-size:11px }
+  .h-ex-row{ flex-direction:column; align-items:flex-start; gap:2px }
+
+  /* Tier presets & product buttons */
+  .size-presets{ flex-wrap:wrap; gap:6px }
+  .preset-btn{ font-size:11px; padding:6px 10px }
+  .prod-btn{ font-size:12px; padding:10px 12px }
+
+  /* Film selector cleaner on narrow */
+  .film-btn{ min-height:48px }
+
+  /* Qty field highlight */
+  #iq.warn{ border-color:#f5a623 !important; box-shadow:0 0 0 2px rgba(245,166,35,.15) !important }
+}
+
+/* ── Admin lock state: hide all settings cards, show only the lock UI ── */
+#page-admin.admin-locked .acard{
+  display:none !important;
+}
+#page-admin.admin-locked .adm-top{
+  /* keep header with lock button visible */
+  display:flex !important;
+}
+/* Visual hint: show a "locked" placeholder card */
+#page-admin.admin-locked .admin-wrap::after{
+  content:"🔒  Настройки скрыты. Нажмите «Заблокировано» и введите пароль для доступа.";
+  display:block;
+  padding:40px 24px;
+  text-align:center;
+  font-size:13px;
+  color:var(--muted2);
+  background:var(--bg2);
+  border:1px dashed var(--border2);
+  border-radius:14px;
+  letter-spacing:0.01em;
+}
+
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="logo">
+
+    <svg class="logo-img" id="logo-img" viewBox="0 0 180 36" xmlns="http://www.w3.org/2000/svg" aria-label="Контора">
+  <g fill="currentColor">
+    <rect x="0" y="8" width="6" height="20" rx="1"/>
+    <rect x="10" y="8" width="18" height="4" rx="1"/>
+    <rect x="10" y="24" width="18" height="4" rx="1"/>
+    <rect x="22" y="12" width="6" height="12"/>
+  </g>
+  <text x="38" y="24" font-family="Unbounded, sans-serif" font-size="16" font-weight="700" letter-spacing="0.5" fill="currentColor">КОНТОРА</text>
+</svg>
+    <div class="logo-descriptor">Портал ОП · v2.0</div>
+  </div>
+  <nav class="portal-nav">
+    <button class="pnav-btn active" id="pnav-calc" onclick="goSection('calc')">🧮 Калькулятор</button>
+    <button class="pnav-btn" id="pnav-kb" onclick="goSection('kb')">📖 База знаний</button>
+    <button class="pnav-btn" id="pnav-mat" onclick="goSection('mat')">📁 Материалы</button>
+    <button class="pnav-btn" id="pnav-admin" onclick="goSection('admin')">⚙ Настройки</button>
+  </nav>
+  <div style="display:flex;gap:8px;align-items:center">
+    <div class="theme-toggle" onclick="toggleTheme()" title="Переключить тему">
+      <span class="theme-ico" id="theme-ico">🌙</span>
+      <div class="theme-sw" id="theme-sw"></div>
+      <span class="theme-ico">☀️</span>
+    </div>
+  </div>
+</header>
+
+
+<!-- ═══════════════════════ CALC PAGE ═══════════════════════ -->
+<div id="page-calc" class="page active">
+<div class="calc-layout">
+
+  <!-- LEFT: inputs -->
+  <div class="calc-left">
+
+    <!-- 1. Product type -->
+    <div>
+      <div class="slabel">Тип продукции</div>
+      <div class="product-toggle">
+        <button class="prod-btn active" id="pb-sticker" onclick="setProduct('sticker')">
+          <span class="ico">🏷</span>Стикер<span class="sub">Одиночный стикер</span>
+        </button>
+        <button class="prod-btn" id="pb-pack" onclick="setProduct('pack')">
+          <span class="ico">📦</span>Стикерпак<span class="sub">Набор стикеров</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. Dimensions -->
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
+        <div class="slabel" style="margin:0">Размер стикера</div>
+        <div class="size-presets" id="size-presets">
+          <!-- filled by JS based on product -->
+        </div>
+      </div>
+      <div class="dims-grid">
+        <div class="dim-field">
+          <input type="number" id="il" value="100" min="10" max="500" oninput="onDim()">
+          <span class="dim-unit">мм</span>
+        </div>
+        <div class="dim-sep">×</div>
+        <div class="dim-field">
+          <input type="number" id="iw" value="100" min="10" max="500" oninput="onDim()">
+          <span class="dim-unit">мм</span>
+        </div>
+      </div>
+      <div class="area-pill">
+        <span class="al">Площадь стикера</span>
+        <span class="av" id="area-val">100.0 см²</span>
+      </div>
+    </div>
+
+    <!-- 2b. Film material -->
+    <div>
+      <div class="slabel">Материал плёнки</div>
+      <div class="film-selector" id="film-selector">
+        <button class="film-btn active" id="fb-white"  onclick="setFilm('white')">
+          <span class="film-ico">⬜</span>
+          <span class="film-name">Белая / Прозрачная</span>
+          <span class="film-sub">базовая плёнка</span>
+        </button>
+        <button class="film-btn" id="fb-holo" onclick="setFilm('holo')">
+          <span class="film-ico">🌈</span>
+          <span class="film-name">Голографическая</span>
+          <span class="film-sub">радужный эффект</span>
+        </button>
+        <button class="film-btn" id="fb-metal" onclick="setFilm('metal')">
+          <span class="film-ico">✨</span>
+          <span class="film-name">Металлизированная</span>
+          <span class="film-sub">золото / хром</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 3. Quantity -->
+    <div>
+      <div class="slabel">Тираж</div>
+      <div class="qty-row">
+        <input type="number" id="iq" value="500" max="20000" oninput="onQtyInput()" onblur="onQtyBlur()" onchange="onQtyBlur()">
+        <span class="qty-unit">штук</span>
+      </div>
+      <input type="range" id="qslider" min="20" max="20000" step="10" value="500" oninput="onSlider()">
+      <div class="range-labels"><span>20 шт — минимум</span><span>20 000 шт</span></div>
+    </div>
+
+    <!-- 3b. Views (макеты) -->
+    <div class="views-row">
+      <div class="views-label-wrap">
+        <div class="slabel" style="margin:0">Видов (макетов)</div>
+        <div class="views-hint" id="views-hint">1 вид — без доплаты</div>
+      </div>
+      <div class="views-ctrl">
+        <button class="views-btn" onclick="changeViews(-1)">−</button>
+        <input type="number" id="iviews" value="1" min="1" max="9" oninput="onViews()">
+        <button class="views-btn" onclick="changeViews(+1)">+</button>
+      </div>
+    </div>
+
+    <!-- 4. Options -->
+    <div>
+      <div class="slabel">Дополнительные опции</div>
+      <div class="opts-list">
+
+        <div class="opt-row" id="or-3d" onclick="togOpt('is3d','or-3d','sw3d')">
+          <div class="opt-left">
+            <div class="opt-ico">💎</div>
+            <div class="opt-texts">
+              <div class="opt-name">3D заливка</div>
+              <div class="opt-desc">Объёмная смола поверх стикера</div>
+            </div>
+          </div>
+          <div class="opt-right">
+            <span class="delta-chip add" id="dlt-3d">+… ₽</span>
+            <div class="sw" id="sw3d"></div>
+          </div>
+        </div>
+
+        <div class="opt-row" id="or-lam" onclick="togOpt('isLam','or-lam','swlam')">
+          <div class="opt-left">
+            <div class="opt-ico">✨</div>
+            <div class="opt-texts">
+              <div class="opt-name">Ламинация</div>
+              <div class="opt-desc">Защитное покрытие пленки</div>
+            </div>
+          </div>
+          <div class="opt-right">
+            <span class="delta-chip add" id="dlt-lam">+… ₽</span>
+            <div class="sw" id="swlam"></div>
+          </div>
+        </div>
+
+        <div class="opt-row" id="or-mf" onclick="togOpt('isMountFilm','or-mf','swmf')">
+          <div class="opt-left">
+            <div class="opt-ico">🔧</div>
+            <div class="opt-texts">
+              <div class="opt-name">Монтажная плёнка</div>
+              <div class="opt-desc" id="desc-mf">Переносная плёнка для монтажа</div>
+            </div>
+          </div>
+          <div class="opt-right">
+            <span class="delta-chip add" id="dlt-mf">+… ₽</span>
+            <div class="sw" id="swmf"></div>
+          </div>
+        </div>
+
+        <div class="opt-row" id="or-urg" onclick="togOpt('isUrgent','or-urg','swurg')">
+          <div class="opt-left">
+            <div class="opt-ico">⚡</div>
+            <div class="opt-texts">
+              <div class="opt-name">Срочность</div>
+              <div class="opt-desc" id="desc-urg">Приоритетное производство</div>
+            </div>
+          </div>
+          <div class="opt-right">
+            <span class="delta-chip add" id="dlt-urg">+… ₽</span>
+            <div class="sw" id="swurg"></div>
+          </div>
+        </div>
+
+        <div class="opt-row" id="or-pkg" onclick="togOpt('isPkg','or-pkg','swpkg')">
+          <div class="opt-left">
+            <div class="opt-ico">🛍</div>
+            <div class="opt-texts">
+              <div class="opt-name">Упаковка в пакетик</div>
+              <div class="opt-desc" id="desc-pkg">Индивидуальная упаковка каждого стикера</div>
+            </div>
+          </div>
+          <div class="opt-right">
+            <span class="delta-chip add" id="dlt-pkg">+… ₽</span>
+            <div class="sw" id="swpkg"></div>
+          </div>
+        </div>
+
+        <div class="opt-row" id="or-prt" onclick="togOpt('isPartner','or-prt','swprt')">
+          <div class="opt-left">
+            <div class="opt-ico">🤝</div>
+            <div class="opt-texts">
+              <div class="opt-name">Партнёрский заказ</div>
+              <div class="opt-desc" id="desc-prt">Скидка для партнёров</div>
+            </div>
+          </div>
+          <div class="opt-right">
+            <span class="delta-chip disc" id="dlt-prt">−… ₽</span>
+            <div class="sw" id="swprt"></div>
+          </div>
+        </div>
+
+        <div class="opt-row" id="or-cut" onclick="togOpt('isCut','or-cut','swcut')">
+          <div class="opt-left">
+            <div class="opt-ico">✂️</div>
+            <div class="opt-texts">
+              <div class="opt-name">Поштучная резка</div>
+              <div class="opt-desc" id="desc-cut">Разрезка каждого стикера отдельно</div>
+            </div>
+          </div>
+          <div class="opt-right">
+            <span class="delta-chip add" id="dlt-cut">+… ₽</span>
+            <div class="sw" id="swcut"></div>
+          </div>
+        </div>
+
+        <div class="opt-row" id="or-design" onclick="togOpt('isDesign','or-design','swdesign')">
+          <div class="opt-left">
+            <div class="opt-ico">🎨</div>
+            <div class="opt-texts">
+              <div class="opt-name">Разработка макета</div>
+              <div class="opt-desc" id="desc-design">Разработка по ТЗ клиента</div>
+            </div>
+          </div>
+          <div class="opt-right">
+            <span class="delta-chip add" id="dlt-design">+… ₽</span>
+            <div class="sw" id="swdesign"></div>
+          </div>
+        </div>
+
+        <div class="opt-row" id="or-edit" onclick="togOpt('isEdit','or-edit','swedit')">
+          <div class="opt-left">
+            <div class="opt-ico">✏️</div>
+            <div class="opt-texts">
+              <div class="opt-name">Правка макета</div>
+              <div class="opt-desc" id="desc-edit">Доработка существующего макета</div>
+            </div>
+          </div>
+          <div class="opt-right">
+            <span class="delta-chip add" id="dlt-edit">+… ₽</span>
+            <div class="sw" id="swedit"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div><!-- /calc-left -->
+
+  <!-- RIGHT: results -->
+  <div class="calc-right">
+    <div class="result-card">
+
+      <!-- big numbers + summary -->
+      <div class="result-hero">
+
+        <!-- LEFT: metrics -->
+        <div class="hero-metrics">
+          <div class="metrics-top">
+            <div class="metric">
+              <div class="ml">Цена за 1 штуку</div>
+              <div class="mv xl" id="r-price1">— ₽</div>
+              <div class="ms" id="r-price1-sub">введите параметры</div>
+            </div>
+            <div class="metric">
+              <div class="ml">Стоимость тиража</div>
+              <div class="mv lg" id="r-total">— ₽</div>
+              <div class="ms" id="r-total-sub">итого к оплате</div>
+            </div>
+          </div>
+          <div class="metrics-cost-row" id="r-cost-row">
+            <div id="r-cost1-wrap">
+              <div class="ml">Себестоимость 1 шт</div>
+              <div class="mono-val" id="r-cost1">— ₽</div>
+            </div>
+            <div id="r-markup-wrap">
+              <div class="ml">Наценка к с/с</div>
+              <div class="mono-val" id="r-markup">—</div>
+            </div>
+            <div id="r-cost-total-wrap">
+              <div class="ml">Себестоимость тиража</div>
+              <div class="mono-val" id="r-cost-total">— ₽</div>
+            </div>
+            <div>
+              <div class="ml">Площадь тиража</div>
+              <div class="mono-val" style="color:var(--blue)" id="area-total-val">— м²</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: summary panel -->
+        <div class="hero-summary">
+          <div class="hs-title">
+            <span>Итог расчёта</span>
+            <button class="copy-btn" id="copy-btn" onclick="copySummary()">
+              <span id="copy-icon">📋</span><span id="copy-label"> Скопировать</span>
+            </button>
+          </div>
+          <div class="hs-body" id="hs-body">
+            <div id="summary-params"></div>
+            <div class="hs-divider"></div>
+            <div id="summary-opts-wrap">
+              <div class="hs-opts-label">Опции</div>
+              <div id="summary-opts"></div>
+            </div>
+            <div class="hs-divider"></div>
+            <div class="hs-total-row">
+              <span class="hs-total-label">Итого</span>
+              <span class="hs-total-val" id="summary-total">— ₽</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- active badges -->
+      <div class="badges" id="badges-row"></div>
+
+      <!-- price table -->
+      <div class="tbl-header">
+        <div class="slabel">Цены по тиражам</div>
+        <span class="ptag" id="ptag">Стикер</span>
+      </div>
+      <table class="ptable">
+        <thead>
+          <tr>
+            <th>Тираж</th>
+            <th>Цена / шт</th>
+            <th>Стоимость тиража</th>
+            <th class="cost-field">Наценка к с/с</th>
+          </tr>
+        </thead>
+        <tbody id="ptbody"></tbody>
+      </table>
+      <div style="height:14px"></div>
+
+</div>
+  </div><!-- /calc-right -->
+
+</div>
+</div><!-- /page-calc -->
+
+
+<!-- ═══════════════════════ ADMIN PAGE ═══════════════════════ -->
+<div id="page-admin" class="page">
+<div class="admin-wrap">
+
+  <div class="adm-top">
+    <div>
+      <div class="adm-title">Настройки <em>калькулятора</em></div>
+      <div class="adm-sub" id="adm-sub-text">Страница защищена — нажмите 🔒 чтобы разблокировать</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="nav-btn" onclick="openHelp()" style="gap:5px">📖 Справка</button>
+      <button class="lock-btn" id="lock-btn" onclick="toggleLock()">
+        <span id="lock-icon">🔒</span>
+        <span id="lock-label">Заблокировано</span>
+      </button>
+      <button class="save-btn" id="save-btn" onclick="saveSettings()" style="display:none">💾 Сохранить</button>
+    </div>
+  </div>
+
+  <!-- Password modal -->
+  <div id="pwd-overlay" class="pwd-overlay hidden" onclick="closePwdModal(event)">
+    <div class="pwd-modal">
+      <div class="pwd-title">🔐 Введите пароль</div>
+      <div class="pwd-sub">Для редактирования настроек калькулятора</div>
+      <input type="password" id="pwd-input" class="pwd-input" placeholder="Пароль"
+             onkeydown="if(event.key==='Enter')checkPwd()">
+      <div id="pwd-error" class="pwd-error hidden">Неверный пароль</div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="pwd-cancel" onclick="closePwdModal()">Отмена</button>
+        <button class="pwd-ok" onclick="checkPwd()">Войти</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HELP MODAL ── -->
+  <div id="help-overlay" class="pwd-overlay hidden" onclick="closeHelp(event)">
+    <div class="help-modal">
+      <div class="help-header">
+        <div>
+          <div class="help-title">📖 Калькулятор стоимости — Справка</div>
+          <div class="help-sub">Версия 1s · Инструкция по использованию калькулятора</div>
+        </div>
+        <button class="help-close" onclick="closeHelp()">✕</button>
+      </div>
+
+      <div class="h-tabs">
+        <button class="h-tab active" onclick="switchTab('guide')">🚀 Как пользоваться</button>
+        <button class="h-tab" onclick="switchTab('formula')">🧮 Как считает</button>
+        <button class="h-tab" onclick="switchTab('changelog')">📋 Версии</button>
+      </div>
+
+      <div class="help-body">
+
+        <!-- ══ GUIDE ══ -->
+        <div class="h-tab-content active" id="tab-guide">
+
+          <div class="h-section">
+            <div class="h-section-title">Шаг 1 — Тип продукции</div>
+            <div class="h-table" style="--hcols:2">
+              <div class="h-tr h-head"><div>Тип</div><div>Когда использовать</div></div>
+              <div class="h-tr"><div><b>🏷 Стикер</b></div><div>Одиночный стикер. Площадь = размер стикера.</div></div>
+              <div class="h-tr"><div><b>📦 Стикерпак</b></div><div>Набор стикеров на подложке. Площадь = вся подложка.</div></div>
+            </div>
+          </div>
+
+          <div class="h-section">
+            <div class="h-section-title">Шаг 2 — Размер</div>
+            <div class="h-text">Вводится в миллиметрах. Быстрые кнопки: <b>30×30, 50×50, 100×100</b> (стикер), <b>А6, А5</b> (стикерпак).</div>
+            <div class="h-formula">Площадь (см²) = Длина (мм) × Ширина (мм) ÷ 100</div>
+          </div>
+
+          <div class="h-section">
+            <div class="h-section-title">Шаг 3 — Тираж и видов</div>
+            <div class="h-text">Тираж — количество штук (от 20 до 5000). Слайдер или ввод вручную.<br><br>
+            <b>Видов (макетов)</b> — сколько разных дизайнов в одном заказе (1–9). Один вид — без доплаты. Каждый дополнительный вид прибавляет фиксированную сумму к стоимости <i>тиража</i> (по умолчанию +1 000 ₽/вид).</div>
+            <div class="h-table" style="--hcols:2">
+              <div class="h-tr h-head"><div>Видов</div><div>Доплата к тиражу</div></div>
+              <div class="h-tr"><div>1</div><div>+0 ₽</div></div>
+              <div class="h-tr"><div>2</div><div>+1 000 ₽</div></div>
+              <div class="h-tr"><div>3</div><div>+2 000 ₽</div></div>
+              <div class="h-tr"><div>N</div><div>+(N−1) × 1 000 ₽</div></div>
+            </div>
+          </div>
+
+          <div class="h-section">
+            <div class="h-section-title">Шаг 4 — Дополнительные опции</div>
+            <div class="h-text">Рядом с каждой опцией — <b>дельта</b>: изменение стоимости тиража при включении.</div>
+            <div class="h-table" style="--hcols:3">
+              <div class="h-tr h-head"><div>Опция</div><div>Тип влияния</div><div>Для</div></div>
+              <div class="h-tr"><div>💎 3D заливка</div><div>Меняет с/с (смола + труд)</div><div>Все</div></div>
+              <div class="h-tr"><div>✨ Ламинация</div><div>Доб. с/с плёнки к цене/шт</div><div>Все</div></div>
+              <div class="h-tr"><div>⚡ Срочность</div><div>+% к цене/шт</div><div>Все</div></div>
+              <div class="h-tr"><div>🛍 Упаковка</div><div>+₽ к каждой штуке</div><div>Все</div></div>
+              <div class="h-tr"><div>🤝 Партнёр</div><div>−% скидка к цене/шт</div><div>Все</div></div>
+              <div class="h-tr"><div>✂️ Резка</div><div>+% к цене/шт</div><div>Только стикеры</div></div>
+              <div class="h-tr"><div>🎨 Разработка макета</div><div>+₽ к тиражу (фикс.)</div><div>Все</div></div>
+              <div class="h-tr"><div>✏️ Правка макета</div><div>+₽ к тиражу (фикс.)</div><div>Все</div></div>
+              <div class="h-tr"><div>🔧 Монтажная плёнка</div><div>Площадь × тираж × цена плёнки</div><div>Все</div></div>
+            </div>
+          </div>
+
+          <div class="h-section">
+            <div class="h-section-title">Выбор материала плёнки</div>
+            <div class="h-text">Три варианта плёнки — переключаются кнопками. Влияют на с/с: меняется только ставка плёнки в формуле.</div>
+            <div class="h-table" style="--hcols:3">
+              <div class="h-tr h-head"><div>Плёнка</div><div>С/с 100×100</div><div>Когда использовать</div></div>
+              <div class="h-tr"><div>⬜ Белая / Прозрачная</div><div>10.00 ₽</div><div>Стандарт для всех заказов</div></div>
+              <div class="h-tr"><div>🌈 Голографическая</div><div>11.00 ₽</div><div>Радужный эффект</div></div>
+              <div class="h-tr"><div>✨ Металлизированная</div><div>15.00 ₽</div><div>Золото / хром</div></div>
+            </div>
+          </div>
+
+          <div class="h-section">
+            <div class="h-section-title">Шаг 5 — Итог расчёта</div>
+            <div class="h-table" style="--hcols:2">
+              <div class="h-tr h-head"><div>Показатель</div><div>Что означает</div></div>
+              <div class="h-tr"><div><b>Цена / шт</b></div><div>Цена продажи одного изделия с учётом всех %-опций</div></div>
+              <div class="h-tr"><div><b>Стоимость тиража</b></div><div>Цена/шт × тираж + фиксированные надбавки (виды, макеты)</div></div>
+              <div class="h-tr"><div>Площадь стикера</div><div>В см² — показывается под полями размера</div></div>
+              <div class="h-tr"><div>Площадь тиража</div><div>В м² — расход плёнки на весь тираж</div></div>
+            </div>
+            <div class="h-text" style="margin-top:10px">Блок <b>«Итог расчёта»</b> справа суммирует все параметры и опции. Кнопка <b>«Скопировать»</b> кладёт текстовый расчёт в буфер — готово к отправке клиенту.</div>
+          </div>
+
+          <div class="h-section" style="border-bottom:none;padding-bottom:0">
+            <div class="h-section-title">Таблица цен по тиражам</div>
+            <div class="h-text">Показывает цену/шт и стоимость тиража для всех ступеней. Текущий тираж выделен. Все включённые опции учтены. Фиксированные надбавки (виды, макеты) добавляются к стоимости тиража.</div>
+          </div>
+
+        </div>
+
+
+        <!-- ══ FORMULA TAB ══ -->
+        <div class="h-tab-content" id="tab-formula">
+
+          <div class="h-section">
+            <div class="h-section-title">Что такое себестоимость (с/с) и наценка</div>
+            <div class="h-text">
+              Калькулятор считает по формуле <b>«от производства»</b>: сначала определяется себестоимость изделия, затем на неё накидывается наценка, зависящая от тиража. Итог корректируется опциями (срочность, партнёр, резка и др.) и дополняется фиксированными услугами.
+            </div>
+          </div>
+
+          <div class="h-section">
+            <div class="h-section-title">Шаг 1 — Себестоимость 1 см²</div>
+            <div class="h-text">Для выбранного материала плёнки и типа изделия считается базовая себестоимость одного квадратного сантиметра:</div>
+            <div class="h-formula">с/с 1 см² = плёнка + краска + труд печати + аренда + налог <span class="h-op">[+ ламинация]</span> <span class="h-op">[+ смола × коэф. + труд заливки × коэф.]</span></div>
+            <ul class="h-bullets">
+              <li><b>Плёнка</b> — цена выбранного материала (Белая / Голо / Металл) в ₽/см²</li>
+              <li><b>Ламинация</b> — +0.03 ₽/см² при включённой опции</li>
+              <li><b>3D (смола)</b> — для стикеров: +смола×1.0 +труд×0.5 · для стикерпаков: +смола×0.5 +труд×1.0</li>
+            </ul>
+          </div>
+
+          <div class="h-section">
+            <div class="h-section-title">Шаг 2 — Себестоимость изделия</div>
+            <div class="h-formula">с/с изделия = с/с 1 см² × площадь</div>
+            <div class="h-text">где <b>площадь</b> = длина (мм) × ширина (мм) ÷ 100. Например, стикер 100×100 мм = 100 см².</div>
+          </div>
+
+          <div class="h-section">
+            <div class="h-section-title">Шаг 3 — Наценка по тиражу</div>
+            <div class="h-text">
+              Наценка применяется по <b>логарифмической кривой</b> — чем больше тираж, тем ниже коэффициент. Для стикеров шкала растягивается от 20 до 3 000 шт, для стикерпаков — от 20 до 2 000 шт. За пределами — плато (минимальная наценка).
+            </div>
+            <div class="h-formula">наценка = макс × (мин / макс)<sup>t</sup>,&nbsp; где&nbsp; t = log(тираж / 20) ÷ log(qty_max / 20)</div>
+            <div class="h-table" style="--hcols:3">
+              <div class="h-tr h-head"><div>Тип</div><div>Максимум (qty ≤ 20)</div><div>Минимум (qty ≥ max)</div></div>
+              <div class="h-tr"><div>Винил · стикер</div><div>×4.0</div><div>×1.5</div></div>
+              <div class="h-tr"><div>Винил · стикерпак</div><div>×3.0</div><div>×1.6</div></div>
+              <div class="h-tr"><div>3D · стикер</div><div>×5.0</div><div>×2.5</div></div>
+              <div class="h-tr"><div>3D · стикерпак</div><div>×3.0</div><div>×1.8</div></div>
+            </div>
+            <div class="h-formula">цена 1 шт (базовая) = с/с изделия × наценка</div>
+          </div>
+
+          <div class="h-section">
+            <div class="h-section-title">Шаг 4 — Коэффициенты опций</div>
+            <div class="h-text">Опции применяются к базовой цене 1 шт мультипликативно:</div>
+            <div class="h-table" style="--hcols:3">
+              <div class="h-tr h-head"><div>Опция</div><div>Коэффициент</div><div>Применение</div></div>
+              <div class="h-tr"><div>⚡ Срочность</div><div>× (1 + 30%)</div><div>+30% к цене 1 шт</div></div>
+              <div class="h-tr"><div>✂️ Поштучная резка</div><div>× (1 + 15%)</div><div>+15% к цене 1 шт</div></div>
+              <div class="h-tr"><div>🤝 Партнёр</div><div>× (1 − 25%)</div><div>−25% к цене 1 шт</div></div>
+              <div class="h-tr"><div>🛍 Упаковка</div><div>+3 ₽</div><div>Добавка к цене 1 шт</div></div>
+            </div>
+          </div>
+
+          <div class="h-section">
+            <div class="h-section-title">Шаг 5 — Фиксированные добавки к тиражу</div>
+            <div class="h-text">Эти суммы добавляются к итогу <b>один раз</b>, независимо от тиража:</div>
+            <ul class="h-bullets">
+              <li><b>🖼 Доп. виды макетов</b> — +1 000 ₽ за каждый вид сверх первого</li>
+              <li><b>🎨 Разработка макета</b> — +5 000 ₽ (фикс)</li>
+              <li><b>✏️ Правка макета</b> — +3 000 ₽ (фикс)</li>
+              <li><b>🔧 Монтажная плёнка</b> — 0.03 ₽/см² × площадь × тираж</li>
+            </ul>
+          </div>
+
+          <div class="h-section">
+            <div class="h-section-title">Шаг 6 — Итоговая формула</div>
+            <div class="h-formula h-formula-final">
+              ИТОГО = (цена 1 шт × тираж) + 1 000₽×(виды−1) + 5 000₽ <span class="h-op">[макет]</span> + 3 000₽ <span class="h-op">[правка]</span> + площадь×тираж×0.03 <span class="h-op">[монтажная]</span>
+            </div>
+          </div>
+
+          <div class="h-section">
+            <div class="h-section-title">Пример: стикер 100×100, Белая, 500 шт</div>
+            <div class="h-example">
+              <div class="h-ex-row"><span>С/с 1 см²</span><span>0.03 + 0.01 + 0.03 + 0.01 + 0.02 = <b>0.10 ₽</b></span></div>
+              <div class="h-ex-row"><span>С/с изделия</span><span>0.10 × 100 = <b>10.00 ₽</b></span></div>
+              <div class="h-ex-row"><span>Наценка при 500 шт</span><span>~ <b>×2.2</b> (интерполяция 4.0 → 1.5)</span></div>
+              <div class="h-ex-row"><span>Цена 1 шт</span><span>10.00 × 2.2 = <b>~22 ₽</b></span></div>
+              <div class="h-ex-row"><span>Итого</span><span>22 × 500 = <b>~11 000 ₽</b></span></div>
+            </div>
+          </div>
+
+        </div>
+        <!-- ══ CHANGELOG ══ -->
+        <div class="h-tab-content" id="tab-changelog">
+
+          <div class="h-section" style="border-bottom:none;padding-bottom:0">
+            <div class="h-section-title">История версий</div>
+
+            <div class="h-example" style="margin-top:10px">
+              <div class="h-ex-row" style="background:var(--lime-dim)">
+                <span style="color:var(--lime);font-family:'JetBrains Mono',monospace;font-weight:700">v2.0</span>
+                <span style="color:var(--muted2);font-size:11px">24 апреля 2026</span>
+              </div>
+              <div class="h-ex-row" style="flex-direction:column;align-items:flex-start;gap:6px;padding:12px 14px">
+                <div style="font-size:12px;color:var(--text);font-weight:600;margin-bottom:2px">Крупное обновление портала</div>
+                <div style="font-size:11px;color:var(--muted2);line-height:1.7">
+                  ✦ <b>Выбор материала плёнки</b> — Белая / Голографическая / Металлизированная. Влияет на с/с.<br>
+                  ✦ <b>Монтажная плёнка</b> — новая опция, стоимость = площадь × тираж × цена<br>
+                  ✦ Минимальный тираж снижен до <b>20 штук</b><br>
+                  ✦ Стоимость плёнок вынесена в отдельный блок настроек<br>
+                  ✦ Страница <b>Материалы</b> переработана: карточки с прямыми ссылками на документы Google Drive<br>
+                  ✦ <b>База знаний</b> обновлена и расширена: партнёрские заказы, заказы по бартеру, полный список партнёров<br>
+                  ✦ Справка калькулятора актуализирована под все нововведения<br>
+                  ✦ Убраны дублирующие поля стоимости плёнки в настройках
+                </div>
+              </div>
+            </div>
+
+            <div class="h-example" style="margin-top:8px">
+              <div class="h-ex-row">
+                <span style="color:var(--muted2);font-family:'JetBrains Mono',monospace;font-weight:700">v1s.2</span>
+                <span style="color:var(--muted2);font-size:11px">Апрель 2026</span>
+              </div>
+              <div class="h-ex-row" style="flex-direction:column;align-items:flex-start;gap:6px;padding:12px 14px">
+                <div style="font-size:12px;color:var(--text);font-weight:600;margin-bottom:2px">Расширение функционала</div>
+                <div style="font-size:11px;color:var(--muted2);line-height:1.7">
+                  ✦ Поле «Видов (макетов)» (+1 000 ₽/вид)<br>
+                  ✦ Разработка макета (5 000 ₽) и правка макета (3 000 ₽)<br>
+                  ✦ Блок «Итог расчёта» с кнопкой «Скопировать»<br>
+                  ✦ Тоглер «Показывать себестоимость»<br>
+                  ✦ База знаний с аккордеоном, адаптивная вёрстка
+                </div>
+              </div>
+            </div>
+
+            <div class="h-example" style="margin-top:8px">
+              <div class="h-ex-row">
+                <span style="color:var(--muted2);font-family:'JetBrains Mono',monospace;font-weight:700">v1s.0</span>
+                <span style="color:var(--muted2);font-size:11px">Апрель 2026</span>
+              </div>
+              <div class="h-ex-row" style="flex-direction:column;align-items:flex-start;gap:6px;padding:12px 14px">
+                <div style="font-size:12px;color:var(--text);font-weight:600;margin-bottom:2px">Первый релиз портала ОП</div>
+                <div style="font-size:11px;color:var(--muted2);line-height:1.7">
+                  ✦ Калькулятор без данных себестоимости<br>
+                  ✦ Раздельные ставки Винил / 3D, логарифмическая кривая наценок<br>
+                  ✦ База знаний ОП, страница «Материалы», настройки под паролем
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SHOW COST TOGGLE ══ -->
+  <div class="acard" style="margin-bottom:0">
+    <div class="acard-body" style="padding:14px 22px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">Показывать себестоимость</div>
+          <div style="font-size:11px;color:var(--muted2);margin-top:3px">Отображает с/с и наценку в калькуляторе и таблице цен</div>
+        </div>
+        <label class="cost-toggle-wrap">
+          <input type="checkbox" id="af-show-cost" onchange="applyCostVisibility()">
+          <span class="cost-toggle-track"><span class="cost-toggle-thumb"></span></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ BLOCK: SHARED MATERIALS ══ -->
+  <div class="acard">
+    <div class="acard-head">
+      <div class="ahead-ico ico-l">🧮</div>
+      <div>
+        <div class="ahead-title">Общие расходные материалы</div>
+        <div class="ahead-sub">Применяются к виниловой и 3D продукции · ₽ на 1 кв.см</div>
+      </div>
+    </div>
+    <div class="acard-body">
+      <div class="afields">
+        <div class="afield"><label>Ламинация</label><div class="ainput-wrap"><input type="number" id="af-s-lam" step="0.01" min="0"><span class="asuffix">₽/см²</span></div></div>
+        <div class="afield"><label>Краска</label><div class="ainput-wrap"><input type="number" id="af-s-ink" step="0.01" min="0"><span class="asuffix">₽/см²</span></div></div>
+        <div class="afield"><label>Труд — печать</label><div class="ainput-wrap"><input type="number" id="af-s-laborPrint" step="0.01" min="0"><span class="asuffix">₽/см²</span></div></div>
+        <div class="afield"><label>Труд — заливка<br><span style="color:var(--muted);font-weight:400">стикер ×0.5 / пак ×1.0</span></label><div class="ainput-wrap"><input type="number" id="af-s-laborResin" step="0.01" min="0"><span class="asuffix">₽/см²</span></div></div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+        <div class="slabel" style="margin-bottom:8px">Стоимость плёнок (₽/см²)</div>
+        <div class="afields">
+          <div class="afield"><label>Базовая (Белая / Прозр.)</label><div class="ainput-wrap"><input type="number" id="af-film-white" step="0.01" min="0"><span class="asuffix">₽/см²</span></div></div>
+          <div class="afield"><label>Голографическая</label><div class="ainput-wrap"><input type="number" id="af-film-holo" step="0.01" min="0"><span class="asuffix">₽/см²</span></div></div>
+          <div class="afield"><label>Металлизированная</label><div class="ainput-wrap"><input type="number" id="af-film-metal" step="0.01" min="0"><span class="asuffix">₽/см²</span></div></div>
+          <div class="afield"><label>Монтажная плёнка</label><div class="ainput-wrap"><input type="number" id="af-mount-film" step="0.01" min="0"><span class="asuffix">₽/см²</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ BLOCK: VINYL ══ -->
+  <div class="prod-block">
+    <div class="prod-block-header vinyl-header">
+      <div class="prod-block-icon">🏷</div>
+      <div>
+        <div class="prod-block-title">Виниловая продукция</div>
+        <div class="prod-block-sub">Уникальные ставки и наценки</div>
+      </div>
+    </div>
+
+    <div class="acard prod-inner">
+      <div class="acard-head">
+        <div class="ahead-ico ico-l">🧮</div>
+        <div><div class="ahead-title">Уникальные ставки</div><div class="ahead-sub">Отличаются от 3D-продукции</div></div>
+      </div>
+      <div class="acard-body">
+        <div class="afields">
+          <div class="afield"><label>Аренда + Электричество</label><div class="ainput-wrap"><input type="number" id="af-v-overhead" step="0.01" min="0"><span class="asuffix">₽/см²</span></div></div>
+          <div class="afield"><label>Налог УСН</label><div class="ainput-wrap"><input type="number" id="af-v-tax" step="0.01" min="0"><span class="asuffix">₽/см²</span></div></div>
+        </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+          <div class="slabel">Итоговая себестоимость на 1 кв.см</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px" id="cost-matrix-vinyl"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="acard prod-inner">
+      <div class="acard-head">
+        <div class="ahead-ico ico-l">📈</div>
+        <div><div class="ahead-title">Наценка к себестоимости</div><div class="ahead-sub">Логарифмическая кривая</div></div>
+      </div>
+      <div class="acard-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:9px">🏷 Стикер</div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:12px;display:flex;flex-direction:column;gap:9px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div class="afield"><label>Макс ×<br><span style="color:var(--muted);font-weight:400">20 шт</span></label><div class="ainput-wrap"><input type="number" id="af-v-sticker-max" step="0.1" min="1"><span class="asuffix">×</span></div></div>
+                <div class="afield"><label>Мин ×<br><span style="color:var(--muted);font-weight:400">3000+ шт</span></label><div class="ainput-wrap"><input type="number" id="af-v-sticker-min" step="0.1" min="1"><span class="asuffix">×</span></div></div>
+              </div>
+              <div style="background:var(--bg4);border-radius:6px;padding:9px 11px"><div style="font-size:10px;color:var(--muted);font-weight:600;margin-bottom:5px;text-transform:uppercase;letter-spacing:.08em">Кривая</div><div id="markup-curve-sticker" style="display:flex;flex-direction:column;gap:3px"></div></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:9px">📦 Стикерпак</div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:12px;display:flex;flex-direction:column;gap:9px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div class="afield"><label>Макс ×<br><span style="color:var(--muted);font-weight:400">20 шт</span></label><div class="ainput-wrap"><input type="number" id="af-v-pack-max" step="0.1" min="1"><span class="asuffix">×</span></div></div>
+                <div class="afield"><label>Мин ×<br><span style="color:var(--muted);font-weight:400">2000+ шт</span></label><div class="ainput-wrap"><input type="number" id="af-v-pack-min" step="0.1" min="1"><span class="asuffix">×</span></div></div>
+              </div>
+              <div style="background:var(--bg4);border-radius:6px;padding:9px 11px"><div style="font-size:10px;color:var(--muted);font-weight:600;margin-bottom:5px;text-transform:uppercase;letter-spacing:.08em">Кривая</div><div id="markup-curve-pack" style="display:flex;flex-direction:column;gap:3px"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /vinyl block -->
+
+  <!-- ══ BLOCK: 3D ══ -->
+  <div class="prod-block">
+    <div class="prod-block-header d3-header">
+      <div class="prod-block-icon">💎</div>
+      <div>
+        <div class="prod-block-title">3D продукция</div>
+        <div class="prod-block-sub">Уникальные ставки и наценки</div>
+      </div>
+    </div>
+
+    <div class="acard prod-inner">
+      <div class="acard-head">
+        <div class="ahead-ico ico-g">🧮</div>
+        <div><div class="ahead-title">Уникальные ставки</div><div class="ahead-sub">Отличаются от виниловой продукции</div></div>
+      </div>
+      <div class="acard-body">
+        <div class="afields">
+          <div class="afield"><label>Смола ПУ КДР</label><div class="ainput-wrap"><input type="number" id="af-d-resin" step="0.01" min="0"><span class="asuffix">₽/см²</span></div></div>
+          <div class="afield"><label>Аренда + Электричество</label><div class="ainput-wrap"><input type="number" id="af-d-overhead" step="0.01" min="0"><span class="asuffix">₽/см²</span></div></div>
+          <div class="afield"><label>Налог УСН</label><div class="ainput-wrap"><input type="number" id="af-d-tax" step="0.01" min="0"><span class="asuffix">₽/см²</span></div></div>
+        </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+          <div class="slabel">Итоговая себестоимость на 1 кв.см</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px" id="cost-matrix-3d"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="acard prod-inner">
+      <div class="acard-head">
+        <div class="ahead-ico ico-l">📈</div>
+        <div><div class="ahead-title">Наценка к себестоимости</div><div class="ahead-sub">Логарифмическая кривая</div></div>
+      </div>
+      <div class="acard-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:9px">💎 Стикер 3D</div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:12px;display:flex;flex-direction:column;gap:9px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div class="afield"><label>Макс ×<br><span style="color:var(--muted);font-weight:400">20 шт</span></label><div class="ainput-wrap"><input type="number" id="af-d-sticker-max" step="0.1" min="1"><span class="asuffix">×</span></div></div>
+                <div class="afield"><label>Мин ×<br><span style="color:var(--muted);font-weight:400">3000+ шт</span></label><div class="ainput-wrap"><input type="number" id="af-d-sticker-min" step="0.1" min="1"><span class="asuffix">×</span></div></div>
+              </div>
+              <div style="background:var(--bg4);border-radius:6px;padding:9px 11px"><div style="font-size:10px;color:var(--muted);font-weight:600;margin-bottom:5px;text-transform:uppercase;letter-spacing:.08em">Кривая</div><div id="markup-curve-sticker-3d" style="display:flex;flex-direction:column;gap:3px"></div></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:9px">📦 Стикерпак 3D</div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:12px;display:flex;flex-direction:column;gap:9px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div class="afield"><label>Макс ×<br><span style="color:var(--muted);font-weight:400">20 шт</span></label><div class="ainput-wrap"><input type="number" id="af-d-pack-max" step="0.1" min="1"><span class="asuffix">×</span></div></div>
+                <div class="afield"><label>Мин ×<br><span style="color:var(--muted);font-weight:400">2000+ шт</span></label><div class="ainput-wrap"><input type="number" id="af-d-pack-min" step="0.1" min="1"><span class="asuffix">×</span></div></div>
+              </div>
+              <div style="background:var(--bg4);border-radius:6px;padding:9px 11px"><div style="font-size:10px;color:var(--muted);font-weight:600;margin-bottom:5px;text-transform:uppercase;letter-spacing:.08em">Кривая</div><div id="markup-curve-pack-3d" style="display:flex;flex-direction:column;gap:3px"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── OPTIONS ── -->
+  <div class="acard">
+    <div class="acard-head">
+      <div class="ahead-ico ico-b">⚙️</div>
+      <div><div class="ahead-title">Надбавки и скидки по опциям</div><div class="ahead-sub">Применяются ко всем типам продукции</div></div>
+    </div>
+    <div class="acard-body">
+      <div class="afields">
+        <div class="afield"><label>Срочность</label><div class="ainput-wrap"><input type="number" id="af-urgency" step="1" min="0" max="500"><span class="asuffix">%</span></div></div>
+        <div class="afield"><label>Поштучная резка</label><div class="ainput-wrap"><input type="number" id="af-cutting" step="1" min="0" max="500"><span class="asuffix">%</span></div></div>
+        <div class="afield"><label>Партнёрская скидка</label><div class="ainput-wrap"><input type="number" id="af-partner" step="1" min="0" max="100"><span class="asuffix">%</span></div></div>
+        <div class="afield"><label>Упаковка в пакетик</label><div class="ainput-wrap"><input type="number" id="af-pkg" step="0.5" min="0"><span class="asuffix">₽/шт</span></div></div>
+
+        <div class="afield"><label>Доп. вид (макет)</label><div class="ainput-wrap"><input type="number" id="af-view-price" step="100" min="0"><span class="asuffix">₽/вид</span></div></div>
+        <div class="afield"><label>Разработка макета</label><div class="ainput-wrap"><input type="number" id="af-design-price" step="100" min="0"><span class="asuffix">₽</span></div></div>
+        <div class="afield"><label>Правка макета</label><div class="ainput-wrap"><input type="number" id="af-edit-price" step="100" min="0"><span class="asuffix">₽</span></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── PREVIEW TABLE ── -->
+  <div class="acard">
+    <div class="acard-head">
+      <div class="ahead-ico ico-l">👁</div>
+      <div><div class="ahead-title">Предпросмотр цен</div><div class="ahead-sub">Расчёт для формата А6 (105×148 мм) по всем тиражам, без доп. опций</div></div>
+    </div>
+    <div class="acard-body" style="padding:0">
+      <table class="ptable admin">
+        <thead>
+          <tr>
+            <th>Тираж</th>
+            <th>С/с стикера, 1 шт</th>
+            <th>Стикер Винил / шт</th>
+            <th>Стикер 3D / шт</th>
+            <th>Стикерпак Винил / шт</th>
+            <th style="padding-right:22px">Стикерпак 3D / шт</th>
+          </tr>
+        </thead>
+        <tbody id="admin-ptbody"></tbody>
+      </table>
+      <div style="height:10px"></div>
+    </div>
+  </div>
+
+</div>
+</div><!-- /page-admin -->
+
+<!-- ═══════════════════════ KB PAGE ═══════════════════════ -->
+<div id="page-kb" class="page">
+<div class="kb-wrap">
+
+  <div class="kb-accordion open" onclick="kbToggle(this)">
+    <div class="kb-acc-head">
+      <span class="kb-acc-title">О компании</span>
+      <span class="kb-acc-arrow"><svg viewBox="0 0 10 6"><polyline points="1,1 5,5 9,1"/></svg></span>
+    </div>
+    <div class="kb-acc-body">
+      <div class="kb-text"><b>Контора</b> — типография, которая специализируется на стикерах.<br><br>Мы делаем всё что клеится: <b>стикеры, этикетки, стикерпаки, широкоформатные наклейки</b>, трафареты. Виниловые, со смолой (3D, выпуклые, объёмные), на голографической, металлизированной плёнках.<br><br>Разработаем макет по брифу от заказчика и произведём тираж продукции.<br>Специализируемся на 3D стикерах: печатаем на немецкой плёнке <b>Orajet</b>, испанскими экосольвентными красками. Используем итальянскую полиуретановую смолу <b>ColorDec</b> — не токсична, не желтеет, абсолютно прозрачна, гипоаллергенна.<br><br>Гарантируем результат, который понравится. <b>С нами всё клеится!</b></div>
+      <div style="margin-top:10px">
+        <span class="kb-tag hi">3D стикеры</span>
+        <span class="kb-tag hi">Стикерпаки</span>
+        <span class="kb-tag hi">Виниловые стикеры</span>
+        <span class="kb-tag">Голографика</span>
+        <span class="kb-tag">Золото / Хром</span>
+        <span class="kb-tag">Этикетки</span>
+        <span class="kb-tag">Широкоформат</span>
+        <span class="kb-tag">Трафареты</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="kb-accordion" onclick="kbToggle(this)">
+    <div class="kb-acc-head">
+      <span class="kb-acc-title">Как мы работаем</span>
+      <span class="kb-acc-arrow"><svg viewBox="0 0 10 6"><polyline points="1,1 5,5 9,1"/></svg></span>
+    </div>
+    <div class="kb-acc-body">
+      <div class="kb-h2">Условия работы</div>
+      <ul class="kb-list">
+        <li>Производим продукцию на заказ, по макету предоставленному клиентом, либо с разработкой макета по ТЗ</li>
+        <li>Работаем по <b>100% предоплате</b></li>
+        <li>Минимальный тираж — <b>50 штук</b> / <b>5 000 ₽</b> на 3D / <b>2 000 ₽</b> на виниловые</li>
+        <li>Работаем со всеми: <b>юридическими и физическими лицами</b></li>
+        <li>Для юрлиц — оплата по счёту. Для физлиц — оплата по СБП (ссылка/QR-код)</li>
+        <li>Вся деятельность ведётся от <b>ИП Чикризов Ю.А.</b> (работа без печати, только подпись)</li>
+      </ul>
+      <div class="kb-h2">Источники лидов</div>
+      <div class="kb-text">Телеграм · Авито · Яндекс.Почта · Телефон · Заявки с сайта</div>
+      <div class="kb-warn" style="margin-top:10px">Реагирование на лид (в рабочее время): <b>не более 30 минут</b>. На Авито — <b>15 минут</b>.</div>
+
+      <div class="kb-h2">Партнёрские условия</div>
+      <div class="kb-text">Работаем с партнёрами на особых условиях — партнёрам предоставляется скидка <b>25%</b>. Подробнее см. раздел «Партнёрские заказы».</div>
+
+      <div class="kb-h2">Бизнес-процесс</div>
+      <div class="kb-steps">
+        <div class="kb-step"><div class="kb-step-n">1</div><div class="kb-step-body"><div class="kb-step-title">Приём заказа</div><div class="kb-step-desc">Входящая заявка от клиента. Источники: телеграм, авито, яндекс.почта, телефон, сайт.</div></div></div>
+        <div class="kb-step"><div class="kb-step-n">2</div><div class="kb-step-body"><div class="kb-step-title">Обработка заказа</div><div class="kb-step-desc">Выявление потребности, запрос макетов, сроков, адреса доставки и пр.</div></div></div>
+        <div class="kb-step"><div class="kb-step-n">3</div><div class="kb-step-body"><div class="kb-step-title">Согласование заказа</div><div class="kb-step-desc">Согласование деталей (макета, тиража и пр.) с заказчиком и производством.</div></div></div>
+        <div class="kb-step"><div class="kb-step-n">4</div><div class="kb-step-body"><div class="kb-step-title">Выставление счёта</div><div class="kb-step-desc">Контроль получения денег.</div></div></div>
+        <div class="kb-step"><div class="kb-step-n">5</div><div class="kb-step-body"><div class="kb-step-title">Запуск производства</div><div class="kb-step-desc">Передача заказа в производство.</div></div></div>
+        <div class="kb-step"><div class="kb-step-n">6</div><div class="kb-step-body"><div class="kb-step-title">Выдача / доставка заказа клиенту</div><div class="kb-step-desc">Выдача заказа клиенту или курьеру. Подпись отгрузочных документов.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kb-accordion" onclick="kbToggle(this)">
+    <div class="kb-acc-head">
+      <span class="kb-acc-title">Продуктовая линейка</span>
+      <span class="kb-acc-arrow"><svg viewBox="0 0 10 6"><polyline points="1,1 5,5 9,1"/></svg></span>
+    </div>
+    <div class="kb-acc-body">
+      <div class="kb-h2">1. Стикер</div>
+      <div class="kb-text">Наклейка на самоклеящейся плёнке.</div>
+      <div class="kb-table-wrap"><table class="kb-table">
+          <tr><th>Параметр</th><th>Варианты</th></tr>
+          <tr><td>Размер</td><td>Любой (от 5×5 мм)</td></tr>
+          <tr><td>Форма</td><td>Круг, квадрат, прямоугольник, фигурная</td></tr>
+          <tr><td>Материал</td><td>Мат · Глянец · Голографическая · Золото · Хром</td></tr>
+          <tr><td>Ламинация</td><td>Мат / Глянец (доп. услуга)</td></tr>
+          <tr><td>Тип</td><td>3D (со смолой) / Винил (плоские)</td></tr>
+      </table></div>
+      <div class="kb-h2">Варианты реза</div>
+      <ul class="kb-list">
+        <li><b>Поштучно</b> — рез насквозь, любой формы (die-cut)</li>
+        <li><b>На листе</b> / <b>в рулоне</b> — с надсечкой по форме, стикеры достаются с рулона</li>
+      </ul>
+      <div class="kb-h2">Форма выдачи</div>
+      <ul class="kb-list">
+        <li>Виниловые: стопкой (при поштучном резе) или в рулоне</li>
+        <li>3D стикеры: россыпью в коробке</li>
+        <li>Доп. услуга: упаковка в индивидуальный бопп-пакет (3 ₽/шт)</li>
+      </ul>
+
+      <div class="kb-h2">2. Стикерпак</div>
+      <div class="kb-text">Набор стикеров на подложке из самоклеящейся плёнки.</div>
+      <div class="kb-table-wrap"><table class="kb-table">
+          <tr><th>Параметр</th><th>Варианты</th></tr>
+          <tr><td>Размер</td><td>Любой (от 50×50 мм)</td></tr>
+          <tr><td>Популярные форматы</td><td>А6, А5, 80×80 мм, 100×100 мм, 120×120 мм</td></tr>
+          <tr><td>Стикеров в паке</td><td>От 1 до 20</td></tr>
+          <tr><td>Форма</td><td>Любая, обычно квадрат / прямоугольник</td></tr>
+          <tr><td>Материал</td><td>Мат · Глянец · Голографическая · Золото · Хром</td></tr>
+          <tr><td>Ламинация</td><td>Мат / Глянец (доп. услуга)</td></tr>
+          <tr><td>Тип</td><td>3D (объёмные, со смолой) / Винил (плоские)</td></tr>
+      </table></div>
+      <div class="kb-warn" style="margin-top:10px"><b>3D стикерпаки</b> упаковываются в бопп-пакетики по умолчанию (входит в стоимость). Виниловые стикерпаки можно упаковать за доплату.</div>
+    </div>
+  </div>
+
+  <div class="kb-accordion" onclick="kbToggle(this)">
+    <div class="kb-acc-head">
+      <span class="kb-acc-title">Линейка услуг и цены</span>
+      <span class="kb-acc-arrow"><svg viewBox="0 0 10 6"><polyline points="1,1 5,5 9,1"/></svg></span>
+    </div>
+    <div class="kb-acc-body">
+      <div class="kb-h2">1. Дизайн стикерпака</div>
+      <div class="kb-text">Разработка макета на печать по брифу (ТЗ) от заказчика. Предлагаем в случае отсутствия макета у клиента.<br><br>Просим клиента заполнить бриф и прислать все необходимые документы (лого, брендбук, референсы и т.д.).</div>
+      <div class="kb-price">Стоимость — <b>5 000 ₽</b> за макет (включает до 2 этапов правок)</div>
+
+      <div class="kb-h2">2. Работа с макетом</div>
+      <div class="kb-text">В случаях, когда макет требует сложных правок для подготовки к печати — по предварительному согласованию с заказчиком добавляется услуга «Работа с макетом».</div>
+      <div class="kb-price">Стоимость — <b>3 000 ₽</b></div>
+
+      <div class="kb-h2">3. Упаковка в индивидуальный пакетик</div>
+      <div class="kb-text">Каждое изделие (стикер, стикерпак) можно дополнительно упаковать в индивидуальный бопп-пакет.</div>
+      <div class="kb-price">Стоимость — <b>3 ₽</b> за 1 ед.<br>Сроки: <b>+1 день</b> на упаковку</div>
+      <div class="kb-warn" style="margin-top:8px">3D стикерпаки упаковываются в пакетики <b>по умолчанию без доплат</b>.</div>
+
+      <div class="kb-h2">4. Доставка</div>
+      <ul class="kb-list">
+        <li><b>По СПб</b> — курьерская, Яндекс. Просим клиента вызвать курьера к нам</li>
+        <li><b>По РФ</b> — СДЭК. Оплата при получении (клиентом) либо включаем в счёт</li>
+      </ul>
+      <div class="kb-warn" style="margin-top:8px">Доставка по РФ до ПВЗ СДЭК — <b>в подарок</b> при заказе свыше 500 стикерпаков со смолой.</div>
+
+      <div class="kb-h2">5. Срочность</div>
+      <div class="kb-text">Изготовление <b>3D стикерпака за 3–4 рабочих дня</b>, для тиражей до 200 шт, по согласованию с производством.<br>За дополнительную плату — рассчитывается в калькуляторе.<br><b>Виниловые стикеры</b> — от 1 дня.</div>
+    </div>
+  </div>
+
+  <div class="kb-accordion" onclick="kbToggle(this)">
+    <div class="kb-acc-head">
+      <span class="kb-acc-title">Сроки изготовления и режим работы</span>
+      <span class="kb-acc-arrow"><svg viewBox="0 0 10 6"><polyline points="1,1 5,5 9,1"/></svg></span>
+    </div>
+    <div class="kb-acc-body">
+      <div class="kb-h2">Стандартные сроки изготовления</div>
+      <div class="kb-table-wrap"><table class="kb-table">
+          <tr><th>Продукция</th><th>Срок</th></tr>
+          <tr><td>Виниловые стикеры и стикерпаки</td><td><b>2 рабочих дня</b> с момента оплаты и согласования макета</td></tr>
+          <tr><td>Объёмные (3D) стикеры и стикерпаки</td><td><b>6 рабочих дней</b> с момента оплаты и согласования макета</td></tr>
+          <tr><td>Разработка макета</td><td><b>2 рабочих дня</b> после поступления брифа и оплаты</td></tr>
+      </table></div>
+      <div class="kb-warn" style="margin-top:8px">Сроки изготовления стикерпаков в тираже <b>свыше 2 000 шт</b> согласовываются с производством индивидуально.</div>
+
+      <div class="kb-h2">Режим работы</div>
+      <ul class="kb-list">
+        <li>Работаем по будням с <b>9:00 до 18:00</b></li>
+        <li>Приём заказа в производство — <b>до 12:00</b></li>
+        <li>Заказы, отправленные в производство позже 12:00 — запускаются <b>на следующий день</b></li>
+        <li>Выдача заказа — <b>в 16:00</b></li>
+      </ul>
+
+      <div class="kb-h2">Общие условия</div>
+      <ul class="kb-list">
+        <li>ИП осуществляет деятельность <b>без печати</b> (только подпись)</li>
+        <li>Реагирование на лид в рабочее время — <b>не более 30 минут</b>, на Авито — <b>15 минут</b></li>
+        <li>Минимальный тираж — <b>50 шт</b> / 5 000 ₽ на 3D / 2 000 ₽ на виниловые</li>
+        <li>Работа по <b>100% предоплате</b></li>
+        <li>Образец / цветопроба — <b>бесплатно</b> (1 экз)</li>
+        <li>Отправка нашего образца по РФ — <b>бесплатно</b></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="kb-accordion" onclick="kbToggle(this)">
+    <div class="kb-acc-head">
+      <span class="kb-acc-title">Продажи — приём заказа</span>
+      <span class="kb-acc-arrow"><svg viewBox="0 0 10 6"><polyline points="1,1 5,5 9,1"/></svg></span>
+    </div>
+    <div class="kb-acc-body">
+      <div class="kb-text">Все входящие заявки (лиды) поступают в CRM Битрикс. Менеджер ведёт коммуникацию с клиентом, проводит консультацию и выясняет потребности с использованием скриптов.</div>
+      <div class="kb-warn">В CRM фиксируем: <b>ФИО клиента</b> · <b>Название компании</b> · <b>Контакты</b> (телефон, почта)</div>
+
+      <div class="kb-h2">Необходимая информация для просчёта</div>
+      <div class="kb-steps">
+        <div class="kb-step"><div class="kb-step-n">1</div><div class="kb-step-body"><div class="kb-step-title">Продукт</div><div class="kb-step-desc">Стикер / Стикерпак (набор стикеров на подложке)</div></div></div>
+        <div class="kb-step"><div class="kb-step-n">2</div><div class="kb-step-body"><div class="kb-step-title">Размеры</div><div class="kb-step-desc">Размеры стикера или стикерпака — в мм</div></div></div>
+        <div class="kb-step"><div class="kb-step-n">3</div><div class="kb-step-body"><div class="kb-step-title">Тираж</div><div class="kb-step-desc">Кол-во штук</div></div></div>
+        <div class="kb-step"><div class="kb-step-n">4</div><div class="kb-step-body"><div class="kb-step-title">Форма выдачи</div><div class="kb-step-desc">На листе (с надсечкой) / поштучно (с резом насквозь)</div></div></div>
+        <div class="kb-step"><div class="kb-step-n">5</div><div class="kb-step-body"><div class="kb-step-title">Материал</div><div class="kb-step-desc">(G) Глянцевая / (M) Матовая / (Holo) Голографическая / (Gold) Золото / (Chrome) Серебро</div></div></div>
+        <div class="kb-step"><div class="kb-step-n">6</div><div class="kb-step-body"><div class="kb-step-title">Ламинация</div><div class="kb-step-desc">(G) Глянцевая / (M) Матовая / Нет</div></div></div>
+        <div class="kb-step"><div class="kb-step-n">7</div><div class="kb-step-body"><div class="kb-step-title">Заливка смолой</div><div class="kb-step-desc">3D / Винил</div></div></div>
+        <div class="kb-step"><div class="kb-step-n">8</div><div class="kb-step-body"><div class="kb-step-title">Макет</div><div class="kb-step-desc">Есть / необходимо разработать</div></div></div>
+      </div>
+
+      <div class="kb-h2">Макет</div>
+      <div class="kb-text">В случае если у клиента <b>нет макета</b> на печать — предлагаем разработать макет стикерпака по ТЗ.<br>Заказчика просим заполнить документ <b>«Бриф на дизайн»</b> и запрашиваем дополнительные документы — брендбук, референсы, логотипы и пр.</div>
+
+      <div class="kb-h2">Просчёт заказа</div>
+      <div class="kb-text">Для просчёта используем калькулятор.<br><a href="https://kontorasales.vercel.app/" target="_blank" style="color:var(--lime);text-decoration:underline">kontorasales.vercel.app</a><br><br>Вводим параметры заказа: тип, размеры, тираж, доп. услуги.<br>Там же можно выбрать <b>«Партнёрский заказ»</b> для начисления партнёрской скидки (−25%).<br><br>Внутри калькулятора также есть инструкция к использованию и продублирована вся база знаний.</div>
+
+      <div class="kb-h2">Бланк заказа</div>
+      <div class="kb-text">В момент выставления счёта генерируем <b>бланк заказа</b> с основными деталями, включая превью макета, для фиксации всех данных и согласования с заказчиком работ, стоимости и прочих деталей.<br><br>Бланк заказа генерируется автоматически в Битриксе — подгружаются данные из сделки.<br><br>В отсутствие бланка необходимо зафиксировать все данные по заказу в переписке с заказчиком письменно, в свободной форме одним сообщением с просьбой подтвердить детали перед запуском.</div>
+
+      <div class="kb-h2">Выставление счёта в 1С</div>
+      <div class="kb-table-wrap"><table class="kb-table">
+          <tr><th>Тип клиента</th><th>Способ оплаты</th><th>Р/счёт</th></tr>
+          <tr><td>Юрлица</td><td>Счёт на оплату</td><td><b>ВТБ</b></td></tr>
+          <tr><td>Физлица</td><td>Ссылка на оплату по СБП</td><td><b>Точка</b></td></tr>
+      </table></div>
+      <div class="kb-warn" style="margin-top:8px">При заполнении карточки физлица для оплаты по СБП — <b>обязательно ввести email</b> в поле контакты (для отправки чека).<br><br>В поле договора ставим <b>«без договора от …»</b> и дату (потребуется далее для отгрузочных документов при отправке по ЭДО).</div>
+    </div>
+  </div>
+
+  <div class="kb-accordion" onclick="kbToggle(this)">
+    <div class="kb-acc-head">
+      <span class="kb-acc-title">Партнёрские заказы</span>
+      <span class="kb-acc-arrow"><svg viewBox="0 0 10 6"><polyline points="1,1 5,5 9,1"/></svg></span>
+    </div>
+    <div class="kb-acc-body">
+      <div class="kb-text">Для <b>рекламных агентств и типографий</b> Контора работает как <b>контрактное производство</b>. Партнёрам предоставляется скидка при размещении заказов.<br><br>Партнёры имеют доступ к нашему калькулятору и другим материалам для самостоятельного просчёта заказа, или могут обращаться в ОП для расчёта поступившего к ним заказа.<br><br>Партнёр самостоятельно принимает заказ у клиента, и далее размещает его на нашем производстве через отдел продаж.</div>
+
+      <div class="kb-h2">Оформление заказа от партнёра</div>
+      <ul class="kb-list">
+        <li>При приёме такого заказа — выбираем опцию <b>«Партнёрский заказ»</b> в калькуляторе для применения скидки</li>
+        <li>В сделке выбираем тип заказа <b>«Партнёрский»</b></li>
+      </ul>
+
+      <div class="kb-warn" style="margin-top:10px"><b>Размер скидки для партнёров: 25%</b><br>По партнёрской системе работаем по <b>100% предоплате</b>.</div>
+
+      <div class="kb-h2">Партнёры (апрель 2026)</div>
+      <ul class="kb-list">
+        <li>Быстрый Цвет (ИП Евдокимов)</li>
+        <li>Too Many Gifts</li>
+        <li>С-Копи</li>
+        <li>Особый Формат (ИП Чивирев)</li>
+        <li>Ниена Принт</li>
+        <li>DailyPrint / Reprint (ИП Тихонов)</li>
+        <li>Пиранья</li>
+        <li>Jam Agency</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="kb-accordion" onclick="kbToggle(this)">
+    <div class="kb-acc-head">
+      <span class="kb-acc-title">Заказы по бартеру</span>
+      <span class="kb-acc-arrow"><svg viewBox="0 0 10 6"><polyline points="1,1 5,5 9,1"/></svg></span>
+    </div>
+    <div class="kb-acc-body">
+      <div class="kb-text">В случае запроса на оплату по бартеру — узнаём у клиента его потребность (что, сколько, к какой дате необходимо) и выясняем, что заказчик может предоставить взамен наших услуг.<br><br>Обычно это: реклама в соцсетях, освещение на мероприятии, благотворительность, предложение написать положительные отзывы.</div>
+
+      <div class="kb-h2">Порядок действий</div>
+      <div class="kb-steps">
+        <div class="kb-step"><div class="kb-step-n">1</div><div class="kb-step-body"><div class="kb-step-title">Выяснить потребность клиента</div><div class="kb-step-desc">Что именно нужно, сколько и к какой дате</div></div></div>
+        <div class="kb-step"><div class="kb-step-n">2</div><div class="kb-step-body"><div class="kb-step-title">Узнать предложение по бартеру</div><div class="kb-step-desc">Что клиент предлагает взамен. Фиксируем всю информацию по потенциальному бартеру.</div></div></div>
+        <div class="kb-step"><div class="kb-step-n">3</div><div class="kb-step-body"><div class="kb-step-title">Отправить на согласование</div><div class="kb-step-desc">Всю информацию передаём руководителю ОП.</div></div></div>
+        <div class="kb-step"><div class="kb-step-n">4</div><div class="kb-step-body"><div class="kb-step-title">Оформить заказ</div><div class="kb-step-desc">В случае согласования в сделке фиксируем <b>полную стоимость</b> заказа и указываем тип оплаты <b>«Бартер»</b>.</div></div></div>
+      </div>
+
+      <div class="kb-warn" style="margin-top:10px">Согласование бартерных заказов — <b>только через руководителя ОП</b>.</div>
+    </div>
+  </div>
+
+  <div class="kb-accordion" onclick="kbToggle(this)">
+    <div class="kb-acc-head">
+      <span class="kb-acc-title">Отгрузка в 1С</span>
+      <span class="kb-acc-arrow"><svg viewBox="0 0 10 6"><polyline points="1,1 5,5 9,1"/></svg></span>
+    </div>
+    <div class="kb-acc-body">
+      <div class="kb-text"><b>Всегда</b> отгружаем продукцию только по факту отгрузки и подписи отгрузочных документов.<br>Подписанные отгрузочные документы <b>сохраняем</b>.</div>
+
+      <div class="kb-h2">Для юридических лиц</div>
+      <ul class="kb-list">
+        <li>Отгрузочные документы — <b>УПД</b> (приоритетно по ЭДО)</li>
+        <li>Необходимо запрашивать <b>идентификатор ЭДО</b> и договариваться об обмене закрывающими документами заранее — во время приёма заказа или сразу после оплаты</li>
+      </ul>
+
+      <div class="kb-h2">Для физических лиц</div>
+      <div class="kb-text">В случае оплаты по СБП — отгрузка производится <b>формированием чека</b>.<br><br>В 1С: «Сформировать УПД» → кнопка «Чек» → кнопка «Печать».</div>
+
+      <div class="kb-h2">Доставка и самовывоз</div>
+      <div class="kb-text">Варианты выдачи готового заказа: <b>самовывоз</b> / <b>доставка</b>. Уточняем о необходимости доставки <b>в момент принятия заказа</b>.</div>
+      <div class="kb-table-wrap"><table class="kb-table">
+          <tr><th>Вариант</th><th>Детали</th></tr>
+          <tr><td>Самовывоз</td><td>Сообщаем адрес, режим работы, прикладываем схему проезда</td></tr>
+          <tr><td>По СПб</td><td>Клиент вызывает курьера самостоятельно, либо включаем стоимость в счёт. Используем Yandex.Go на рабочем телефоне (привязан банк «Точка»)</td></tr>
+          <tr><td>По РФ</td><td>СДЭК, оплата при получении клиентом либо включается в счёт. Используем ЛК для Юрлиц СДЭК. По умолчанию — доставка ПВЗ-ПВЗ, запрашиваем удобный ПВЗ у клиента</td></tr>
+      </table></div>
+      <div class="kb-warn" style="margin-top:8px">При заказе <b>свыше 500 стикерпаков со смолой</b> — доставка по РФ до ПВЗ СДЭК в подарок.</div>
+    </div>
+  </div>
+
+  <div class="kb-accordion" onclick="kbToggle(this)">
+    <div class="kb-acc-head">
+      <span class="kb-acc-title">Инструкция менеджера — воронка CRM</span>
+      <span class="kb-acc-arrow"><svg viewBox="0 0 10 6"><polyline points="1,1 5,5 9,1"/></svg></span>
+    </div>
+    <div class="kb-acc-body">
+      <div class="kb-h2">1. Распределение ответственности</div>
+      <div class="kb-table-wrap"><table class="kb-table">
+          <tr><th>Роль</th><th>Зона ответственности</th></tr>
+          <tr><td><b>Менеджер продаж</b></td><td>Ведёт заказ от поступления лида до передачи в производство</td></tr>
+          <tr><td><b>Продакт-менеджер</b></td><td>Документооборот с поставщиками и заказчиком, проверка и запуск заказа в производство</td></tr>
+      </table></div>
+
+      <div class="kb-h2">2. Работа с воронкой «Лиды»</div>
+      <div class="kb-text"><b>2.1. Не обработан</b><br>Что сюда попадает: все новые заявки.<br>Время обработки: <b>не более 10 минут</b>.<br><br><b>2.2. В работе</b><br>Лиды на этапе квалификации (выявление целевого запроса). К <b>нецелевым</b> относятся: спам и реклама, непрофильные запросы, неадекватные запросы (например: 1 стикер, 10 штук с персонализацией).</div>
+      <div class="kb-warn" style="margin-top:8px">Все лиды, по которым производится расчёт — переводим в воронку <b>«Контора»</b>.</div>
+
+      <div class="kb-h2">3. Воронка «Контора» — 12 шагов</div>
+
+      <div class="kb-steps">
+        <div class="kb-step"><div class="kb-step-n">1</div><div class="kb-step-body">
+          <div class="kb-step-title">Выяснение потребности</div>
+          <div class="kb-step-desc">Зафиксировать: срок (к какому числу), продукт (стикер/стикерпак), материал (винил/3D), вид (поштучно/на листе/в рулоне), размер в мм, тираж, кол-во стикеров в паке, материал печати (мат/глянец/золото/хром/голо), ламинация, макет (есть/нет/проверка).<br>Если макета нет → отправить бриф. Если сами не можете проверить → задача на производство: «Проверка макета».</div>
+        </div></div>
+
+        <div class="kb-step"><div class="kb-step-n">2</div><div class="kb-step-body">
+          <div class="kb-step-title">Расчёт КП</div>
+          <div class="kb-step-desc">Рассчитать по калькулятору на основании ТЗ. Все данные — в карточку сделки. Время на расчёт: <b>не более 30 минут</b>.</div>
+        </div></div>
+
+        <div class="kb-step"><div class="kb-step-n">3</div><div class="kb-step-body">
+          <div class="kb-step-title">КП отправлено</div>
+          <div class="kb-step-desc">Автоматически ставится задача «Получить обратную связь». Уточнить у клиента прямо: «Вам подходит предложение?» или косвенно: «Как будете оплачивать — физлицо или юрлицо?» / «Когда готовы запуститься?».<br>Обязательно: заполнить данные о контакте и компании. Контакт должен быть прикреплён к компании, в компании — контакт.</div>
+        </div></div>
+
+        <div class="kb-step"><div class="kb-step-n">4</div><div class="kb-step-body">
+          <div class="kb-step-title">Подготовка счёта / договора</div>
+          <div class="kb-step-desc">Через задачу на продакт-менеджера.<br><b>Юрлицо:</b> заполнить карточку, внести реквизиты, запросить идентификатор ЭДО. В задаче прописать: продукт, тираж, цену за шт., общую сумму, платную доставку отдельной строкой, идентификатор ЭДО.<br><b>Физлицо:</b> в задаче прописать: цену за шт., общую сумму, платную доставку, ФИО, почту для чека.<br>Продакт выставляет счёт и присылает ссылку/номер. Вы вносите номер в карточку и отправляете клиенту.</div>
+        </div></div>
+
+        <div class="kb-step"><div class="kb-step-n">5</div><div class="kb-step-body">
+          <div class="kb-step-title">Счёт / договор отправлены</div>
+          <div class="kb-step-desc">Сделка на этом этапе до получения оплаты и подготовленных макетов. Проверить корректность полей. Отправить клиенту бланк заказа (номер, срок, продукт, материал, вид, размер, тираж, материал печати, ламинация, макет).</div>
+        </div></div>
+
+        <div class="kb-step"><div class="kb-step-n">6</div><div class="kb-step-body">
+          <div class="kb-step-title">Запуск заказа</div>
+          <div class="kb-step-desc">В задачу на запуск — <b>добавить макеты</b>. Продакт проверяет и меняет исполнителя на руководителя производства.</div>
+        </div></div>
+
+        <div class="kb-step"><div class="kb-step-n">7</div><div class="kb-step-body">
+          <div class="kb-step-title">Заказ запущен</div>
+          <div class="kb-step-desc">Производство берёт задачу в работу и нажимает «Запустить заказ». По готовности пишет отбивку «Заказ на выдаче» и завершает задачу. Сделка автоматически переходит дальше.</div>
+        </div></div>
+
+        <div class="kb-step"><div class="kb-step-n">8</div><div class="kb-step-body">
+          <div class="kb-step-title">Готово к отгрузке</div>
+          <div class="kb-step-desc">Менеджер заполняет поля о доставке и двигает сделку дальше.</div>
+        </div></div>
+
+        <div class="kb-step"><div class="kb-step-n">9</div><div class="kb-step-body">
+          <div class="kb-step-title">Отгрузить заказ</div>
+          <div class="kb-step-desc">Продакт готовит закрывающие документы. Клиент получает заказ. Менеджер двигает сделку на следующий этап.</div>
+        </div></div>
+
+        <div class="kb-step"><div class="kb-step-n">10</div><div class="kb-step-body">
+          <div class="kb-step-title">Закрывающие документы</div>
+          <div class="kb-step-desc">После получения подписанных документов — сделка закрывается и переводится в «Успешные».</div>
+        </div></div>
+
+        <div class="kb-step"><div class="kb-step-n">11</div><div class="kb-step-body">
+          <div class="kb-step-title">Сделка успешна</div>
+          <div class="kb-step-desc">Автозадача на запрос обратной связи / комментариев по заказу и просьба оставить отзыв.</div>
+        </div></div>
+
+        <div class="kb-step"><div class="kb-step-n">12</div><div class="kb-step-body">
+          <div class="kb-step-title">Сделка провалена</div>
+          <div class="kb-step-desc">При закрытии обязательно: отметить причину из выпадающего списка и написать подробный комментарий.</div>
+        </div></div>
+      </div>
+
+      <div class="kb-h2">4. Памятка: ключевые точки контроля</div>
+      <ul class="kb-list">
+        <li>Используйте готовые шаблоны для быстрых ответов в Битриксе (под значком <b>⚡</b>)</li>
+        <li><b>Не более 10 минут</b> — на обработку новой заявки</li>
+        <li><b>Не более 30 минут</b> — на расчёт КП</li>
+        <li>Перед отправкой счёта — заполнить карточку клиента и компании</li>
+        <li>На запуск заказа — <b>обязательно</b> добавить макеты</li>
+        <li>При провале сделки — <b>всегда</b> указывать причину и комментарий</li>
+        <li>Если клиент не отвечает — повторная связь, пока без ответа не останется <b>три сообщения или звонка</b>, затем можно закрывать</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="kb-accordion" onclick="kbToggle(this)">
+    <div class="kb-acc-head">
+      <span class="kb-acc-title">Скрипты для общения с клиентом</span>
+      <span class="kb-acc-arrow"><svg viewBox="0 0 10 6"><polyline points="1,1 5,5 9,1"/></svg></span>
+    </div>
+    <div class="kb-acc-body">
+      <div class="kb-h2">Приветствие</div>
+      <div class="kb-quote">«Добрый день! Получили ваш запрос на стикеры.<br>Чем можем помочь?<br><br>Мы — Контора! Делаем всё что клеится: стикеры, стикерпаки, этикетки. Специализируемся на 3D стикерах.<br>Печатаем на немецкой плёнке, заливаем итальянской полиуретановой смолой.<br>Находимся в Санкт-Петербурге, отправляем по всей России.»</div>
+
+      <div class="kb-h2">Запрос макета</div>
+      <div class="kb-quote">«Есть ли у вас готовый макет? Пришлите его пожалуйста на проверку.<br><br>Если макета нет — можем взять разработку дизайна на себя, от вас потребуется заполнить бриф и прислать материалы по дизайну (брендбук, логотип, референсы).<br>Стоимость разработки макета = 5 000 ₽, включает в себя 2 этапа правок.»</div>
+
+      <div class="kb-h2">Сообщение с итогами расчёта заказа</div>
+      <div class="kb-quote">«Стикерпак /формат/<br>с /матовой ламинацией/<br>Тираж: — — — шт<br>Стоимость: — — — рублей<br>Срок изготовления: 6 рабочих дней с момента оплаты и согласования макета<br><br>В цену включено:<br>— упаковка каждого 3D стикерпака в бопп-пакет*<br>— техническая доработка макета<br>— неограниченное количество стикеров в стикерпаке<br>— нет доплат за сложные формы реза<br>— печать на немецкой плёнке Orafol<br>— заливка итальянской полиуретановой смолой<br>— доставка по всей РФ до ПВЗ СДЭК (при заказе от 500 шт)*<br>*действует для 3D стикерпаков со смолой<br><br>Также есть дополнительные услуги:<br>— срочность<br>— упаковка каждого изделия в бопп-пакет<br>— ламинация матовой/глянцевой плёнкой<br>— разработка макета по вашему ТЗ»</div>
+
+      <div class="kb-h2">Сроки</div>
+      <div class="kb-quote">«Подскажите, к какому сроку необходимо изготовить тираж?<br>Сроки изготовления, с момента оплаты и согласования макета на печать:<br>3D продукция: 6 рабочих дней.<br>Виниловая: 2 рабочих дня.<br>Работаем по 100% предоплате.»</div>
+
+      <div class="kb-h2">Оплата</div>
+      <div class="kb-quote">«Подскажите, как вам будет удобно оплатить?<br>Можем выставить счёт на компанию, или пришлём ссылку на оплату банковской картой (по СБП, QR-код).»</div>
+
+      <div class="kb-h2">Ответ на жалобу на высокие цены</div>
+      <div class="kb-quote">«Спасибо за ответ!<br>У нас не самые низкие цены на рынке, так как мы используем самые качественные расходники: печатаем на немецкой плёнке и заливаем итальянской полиуретановой смолой.<br>Гарантируем результат, который понравится и будет долговечен.<br><br>Советуем остерегаться эпоксидной смолы, которую чаще всего используют наши конкуренты. Эпоксидная смола токсична, и желтеет уже через несколько месяцев, в отличие от полиуретановой.<br><br>В качестве контрпредложения хотим предложить вам сделать по цене конкурентов — без экономии на чём-либо.<br>Если вы уже заказали и оплатили — позвольте сделать вам образец и отправить, чтобы вы смогли почувствовать разницу, пощупать руками нашу работу.<br>Ждём вашего ответа!»</div>
+
+      <div class="kb-h2">После отгрузки заказа</div>
+      <div class="kb-quote">«Спасибо за заказ!<br>Расскажите, как вам стикеры? Всё ли понравилось?<br>Будем рады поработать в будущем, а пока просим вас оставить отзыв на Яндекс.Картах: <a href="https://yandex.ru/maps/-/CHCkeZ0k" target="_blank" style="color:var(--lime)">yandex.ru/maps/-/CHCkeZ0k</a><br>Спасибо и доброго дня!»</div>
+    </div>
+  </div>
+
+  <div class="kb-accordion" onclick="kbToggle(this)">
+    <div class="kb-acc-head">
+      <span class="kb-acc-title">Материалы производства</span>
+      <span class="kb-acc-arrow"><svg viewBox="0 0 10 6"><polyline points="1,1 5,5 9,1"/></svg></span>
+    </div>
+    <div class="kb-acc-body">
+      <div class="kb-text">В Конторе мы <b>ни на чём не экономим</b>: используем лучшие расходные материалы на рынке и не отступаем от своих стандартов.</div>
+
+      <div class="kb-h2">Плёнки</div>
+
+      <div class="kb-subhead">Orajet 3640 (Германия)</div>
+      <div class="kb-text">Мягкая полихлорвиниловая (ПВХ) плёнка для печати. Производство Orafol (Германия). Стандарт среди печатных плёнок в наружной рекламе.<br><br><b>Базовая самоклеящаяся плёнка</b>. Используется при изготовлении всех заказов на стикеры и стикерпаки по умолчанию. Также используется для ламинации.</div>
+      <ul class="kb-list">
+        <li>Варианты: <b>Мат / Глянец</b></li>
+        <li>Цвет: <b>Белая / Прозрачная</b></li>
+        <li>Рулоны: <b>1,26 м · 1,6 м</b></li>
+        <li>Толщина: <b>80 мкм</b></li>
+      </ul>
+
+      <div class="kb-subhead">Oracal 352 — Золото / Серебро</div>
+      <div class="kb-text">Полиэфирная самоклеящаяся плёнка, 160 г/м². Полиакрилатный клей на основе растворителя обеспечивает постоянное прилипание. Производство Orafol (Германия).<br><br>Доступна в цветах: <b>Золото, Хром</b>.</div>
+
+      <div class="kb-subhead">Голографическая</div>
+      <div class="kb-text">Самоклеящаяся ПВХ-плёнка для печати с глянцевой поверхностью.</div>
+      <ul class="kb-list">
+        <li>Толщина плёнки: <b>100 микрон</b></li>
+        <li>Клей: перманентный, прозрачный, акриловый</li>
+        <li>Подложка: бумага с PE-покрытием, 120 г/м²</li>
+      </ul>
+
+      <div class="kb-h2">Смола</div>
+      <div class="kb-subhead">Полиуретановая смола ColorDec (Италия)</div>
+      <div class="kb-text">Для заливки 3D стикеров мы используем <b>только твёрдо-мягкую ПУ смолу из Италии</b>.<br><br>Не токсична · Не желтеет · Абсолютно прозрачна · Гипоаллергенна.</div>
+
+      <div class="kb-h2">Упаковка</div>
+      <div class="kb-subhead">Бопп-пакет</div>
+      <div class="kb-text">Стандартный метод упаковки продукции — пакет с клеевым клапаном. Стараемся всегда использовать пакет ровно под размер заказа, так продукция выглядит лучше.</div>
+    </div>
+  </div>
+
+  <div class="kb-accordion" onclick="kbToggle(this)">
+    <div class="kb-acc-head">
+      <span class="kb-acc-title">Нестандартные запросы</span>
+      <span class="kb-acc-arrow"><svg viewBox="0 0 10 6"><polyline points="1,1 5,5 9,1"/></svg></span>
+    </div>
+    <div class="kb-acc-body">
+      <div class="kb-text">В случае нестандартных запросов на упаковку, материалы, доп. продукцию, выполнение заказа под ключ — например:</div>
+      <ul class="kb-list">
+        <li>Трафареты</li>
+        <li>Бопп-пакет с хенгером</li>
+        <li>Печать на плёнке не из наличия</li>
+        <li>Вложение стикера в открытку</li>
+        <li>Выполнение сборного заказа с привлечением других подрядчиков</li>
+      </ul>
+      <div class="kb-text" style="margin-top:10px">В <b>индивидуальном порядке</b> по согласованию с производством принимаем решение о возможности выполнения заказа, находим подрядчиков и необходимые материалы, согласовываем с заказчиком и берём в работу.</div>
+    </div>
+  </div>
+
+  <div class="kb-accordion" onclick="kbToggle(this)">
+    <div class="kb-acc-head">
+      <span class="kb-acc-title">Инструменты и материалы для работы</span>
+      <span class="kb-acc-arrow"><svg viewBox="0 0 10 6"><polyline points="1,1 5,5 9,1"/></svg></span>
+    </div>
+    <div class="kb-acc-body">
+      <div class="kb-text">Все материалы, документы и доступы, необходимые менеджеру продаж для работы:</div>
+      <ol class="kb-list kb-list-num">
+        <li><b>Калькулятор</b> — <a href="https://kontorasales.netlify.app/" target="_blank" style="color:var(--lime)">kontorasales.netlify.app</a></li>
+        <li><b>Технические требования для макетов</b> — сборник правил по оформлению макета для отправки клиентам</li>
+        <li><b>Доступы в 1С Бух ИП Чикризов</b></li>
+        <li><b>Доступы в чат Контора</b> — связь с производством, фото продукции, статусы оплат выставленных счетов</li>
+        <li><b>Отказное письмо</b> — документ о том, что продукция, которую производит Контора, не сертифицируется</li>
+        <li><b>Бриф на разработку макета</b> (дизайн) — заполняется клиентом</li>
+        <li><b>Бланк заказа для клиента</b> — лист со всей необходимой информацией по заказу, отправляется на согласование и подпись заказчику перед выставлением счёта</li>
+        <li><b>Бланк заказа для производства</b> — техническая карта с необходимой информацией по заказу для производства</li>
+        <li><b>Доступ к производственному календарю</b> — для отслеживания загрузки производства при приёме заказа</li>
+        <li><b>Реквизиты ИП Чикризов</b>, включая идентификатор ЭДО</li>
+        <li><b>Типовой договор</b> со спецификациями</li>
+        <li><b>Трубка</b> с публичным номером конторы</li>
+        <li><b>Доступ к воронке Битрикс</b></li>
+        <li><b>Скрипты для продаж</b></li>
+        <li><b>Папка со всеми материалами</b></li>
+      </ol>
+      <div class="kb-warn" style="margin-top:10px">Ссылки на документы и шаблоны — на странице <b>«Материалы»</b> портала.</div>
+    </div>
+  </div>
+
+</div>
+</div><!-- /page-kb -->
+<!-- ═══════════════════════ MATERIALS PAGE ═══════════════════════ -->
+<div id="page-mat" class="page">
+<div class="mat-page-wrap">
+
+  <div class="mat-section-title">📂 Документы и файлы</div>
+  <div class="mat-docs-grid">
+  <div class="mat-doc-card">
+    <div class="mat-doc-top">
+      <div class="mat-doc-ico ico-form">📋</div>
+      <div style="flex:1">
+        <div class="mat-doc-name">Бриф на разработку макета</div>
+        <span class="mat-doc-tag">Бриф</span>
+      </div>
+    </div>
+    <div class="mat-doc-hint">Клиент заполняет перед разработкой дизайна. Содержит поля для описания ТЗ, загрузки логотипа, брендбука и референсов. Стоимость разработки макета по брифу — 5 000 ₽.</div>
+    <div class="mat-doc-actions">
+      <a class="mat-doc-btn primary" href="https://docs.google.com/document/d/1rf_bZ-H19iLWAngtFYXzkRzjxZydBFWttXSTJEEnRSY/edit?usp=share_link" target="_blank">👁 Открыть</a>
+      <a class="mat-doc-btn secondary" href="https://docs.google.com/document/d/1rf_bZ-H19iLWAngtFYXzkRzjxZydBFWttXSTJEEnRSY/export?format=pdf" target="_blank">⬇ Скачать</a>
+    </div>
+  </div>
+  <div class="mat-doc-card">
+    <div class="mat-doc-top">
+      <div class="mat-doc-ico ico-pdf">🗺</div>
+      <div style="flex:1">
+        <div class="mat-doc-name">Схема проезда</div>
+        <span class="mat-doc-tag">Схема</span>
+      </div>
+    </div>
+    <div class="mat-doc-hint">Отправляется клиенту при самовывозе заказа. Прикладывается к сообщению вместе с адресом и режимом работы (будни 9:00–18:00).</div>
+    <div class="mat-doc-actions">
+      <a class="mat-doc-btn primary" href="https://drive.google.com/file/d/1xsDNKA5aHDD9kVUUQGj1cEqm7VbDRthc/view?usp=share_link" target="_blank">👁 Открыть</a>
+      <a class="mat-doc-btn secondary" href="https://drive.google.com/uc?export=download&id=1xsDNKA5aHDD9kVUUQGj1cEqm7VbDRthc" target="_blank">⬇ Скачать</a>
+    </div>
+  </div>
+  <div class="mat-doc-card">
+    <div class="mat-doc-top">
+      <div class="mat-doc-ico ico-pdf">📐</div>
+      <div style="flex:1">
+        <div class="mat-doc-name">Технические требования к макетам</div>
+        <span class="mat-doc-tag">Техтребования</span>
+      </div>
+    </div>
+    <div class="mat-doc-hint">Сборник правил по оформлению макета для печати. Отправляется клиенту при передаче макета: допустимые форматы, разрешение, отступы, цветовые профили.</div>
+    <div class="mat-doc-actions">
+      <a class="mat-doc-btn primary" href="https://drive.google.com/file/d/1DzHEpSZ3DeJhDq4jq-ZufZ-WIrh3o8gd/view?usp=share_link" target="_blank">👁 Открыть</a>
+      <a class="mat-doc-btn secondary" href="https://drive.google.com/uc?export=download&id=1DzHEpSZ3DeJhDq4jq-ZufZ-WIrh3o8gd" target="_blank">⬇ Скачать</a>
+    </div>
+  </div>
+  <div class="mat-doc-card">
+    <div class="mat-doc-top">
+      <div class="mat-doc-ico ico-doc">📄</div>
+      <div style="flex:1">
+        <div class="mat-doc-name">Типовой договор со спецификациями</div>
+        <span class="mat-doc-tag">Договор</span>
+      </div>
+    </div>
+    <div class="mat-doc-hint">Используется при работе с юридическими лицами. Подписывается совместно со спецификацией на конкретный заказ. Работает без печати — только подпись ИП Чикризов Ю.А.</div>
+    <div class="mat-doc-actions">
+      <a class="mat-doc-btn primary" href="https://docs.google.com/document/d/1UhVEe0jBPWuVt6zOoX87BbQcHali_GI9cL2pJzumEN8/edit?usp=share_link" target="_blank">👁 Открыть</a>
+      <a class="mat-doc-btn secondary" href="https://docs.google.com/document/d/1UhVEe0jBPWuVt6zOoX87BbQcHali_GI9cL2pJzumEN8/export?format=pdf" target="_blank">⬇ Скачать</a>
+    </div>
+  </div>
+  <div class="mat-doc-card">
+    <div class="mat-doc-top">
+      <div class="mat-doc-ico ico-req">🏦</div>
+      <div style="flex:1">
+        <div class="mat-doc-name">Реквизиты ИП Чикризов</div>
+        <span class="mat-doc-tag">Реквизиты</span>
+      </div>
+    </div>
+    <div class="mat-doc-hint">Полные реквизиты для выставления счётов и ЭДО. Включает: ИНН, ОГРНИП, р/сч ВТБ, р/сч Точка, идентификатор ЭДО для работы с юрлицами.</div>
+    <div class="mat-doc-actions">
+      <a class="mat-doc-btn primary" href="https://drive.google.com/file/d/1aVjw5PhpGQUIAdufEIcOxP64H4gCO_dX/view?usp=share_link" target="_blank">👁 Открыть</a>
+      <a class="mat-doc-btn secondary" href="https://drive.google.com/uc?export=download&id=1aVjw5PhpGQUIAdufEIcOxP64H4gCO_dX" target="_blank">⬇ Скачать</a>
+    </div>
+  </div>
+  <div class="mat-doc-card">
+    <div class="mat-doc-top">
+      <div class="mat-doc-ico ico-doc">✉️</div>
+      <div style="flex:1">
+        <div class="mat-doc-name">Отказное письмо</div>
+        <span class="mat-doc-tag">Письмо</span>
+      </div>
+    </div>
+    <div class="mat-doc-hint">Официальный документ: продукция, которую производит Контора (стикеры, наклейки, этикетки), не подлежит обязательной сертификации. Предоставляется клиентам по запросу.</div>
+    <div class="mat-doc-actions">
+      <a class="mat-doc-btn primary" href="https://drive.google.com/file/d/12SJDEC_jv3bGZ6nQ-9GpRUeXdFXTApZU/view?usp=share_link" target="_blank">👁 Открыть</a>
+      <a class="mat-doc-btn secondary" href="https://drive.google.com/uc?export=download&id=12SJDEC_jv3bGZ6nQ-9GpRUeXdFXTApZU" target="_blank">⬇ Скачать</a>
+    </div>
+  </div>
+  </div>
+
+  <div class="mat-section-title">🔐 Доступы и инструменты</div>
+  <div class="mat-other-list">
+    <div class="mat-other-item">
+      <div class="mat-other-n">1</div>
+      <div class="mat-other-ico">💼</div>
+      <div class="mat-other-body">
+        <div class="mat-other-name">1С Бухгалтерия ИП Чикризов</div>
+        <div class="mat-other-desc">Выставление счетов, формирование УПД и чеков, отгрузка</div>
+      </div>
+      <span class="mat-other-badge">Доступ у руководителя</span>
+    </div>
+    <div class="mat-other-item">
+      <div class="mat-other-n">2</div>
+      <div class="mat-other-ico">💬</div>
+      <div class="mat-other-body">
+        <div class="mat-other-name">Чат Контора (Telegram)</div>
+        <div class="mat-other-desc">Связь с производством, фото готовых заказов, статусы оплат по счетам</div>
+      </div>
+      <span class="mat-other-badge">Доступ у руководителя</span>
+    </div>
+    <div class="mat-other-item">
+      <div class="mat-other-n">3</div>
+      <div class="mat-other-ico">📅</div>
+      <div class="mat-other-body">
+        <div class="mat-other-name">Производственный календарь</div>
+        <div class="mat-other-desc">График загрузки производства — для согласования сроков при приёме заказа</div>
+      </div>
+      <span class="mat-other-badge">Доступ у руководителя</span>
+    </div>
+    <div class="mat-other-item">
+      <div class="mat-other-n">4</div>
+      <div class="mat-other-ico">📊</div>
+      <div class="mat-other-body">
+        <div class="mat-other-name">Воронка Битрикс CRM</div>
+        <div class="mat-other-desc">Воронки «Лиды» и «Контора» — ведение заказов от первого контакта до закрытия</div>
+      </div>
+      <span class="mat-other-badge">Доступ у руководителя</span>
+    </div>
+    <div class="mat-other-item">
+      <div class="mat-other-n">5</div>
+      <div class="mat-other-ico">📞</div>
+      <div class="mat-other-body">
+        <div class="mat-other-name">Трубка с публичным номером Конторы</div>
+        <div class="mat-other-desc">Входящие звонки от клиентов — рабочий телефон</div>
+      </div>
+      <span class="mat-other-badge">Физически у менеджера</span>
+    </div>
+  </div>
+
+</div>
+</div><!-- /page-mat -->
+
+
+
+
+<script>
+/* ══════════════════════════════════════════════
+   DEFAULTS & SETTINGS
+══════════════════════════════════════════════ */
+const DEFAULTS = {
+  vinyl: {
+    rates: {
+      lam:        0.03,
+      ink:        0.01,
+      laborPrint: 0.03,
+      overhead:   0.01,
+      tax:        0.02,
+    },
+    markup: {
+      stickerMax: 4.0, stickerMin: 1.5,
+      packMax:    3.0, packMin:    1.6,
+    }
+  },
+  d3: {
+    rates: {
+      lam:         0.03,
+      ink:         0.01,
+      laborPrint:  0.03,
+      resin:       0.45,
+      laborResin:  0.10,
+      overhead:    0.02,
+      tax:         0.070,
+    },
+    markup: {
+      stickerMax: 5.0, stickerMin: 2.5,
+      packMax:    3.0, packMin:    1.8,
+    }
+  },
+  options: { urgency: 30, cutting: 15, partner: 25 },
+  pkgPrice: 3,
+  viewPrice: 1000,
+  filmPriceWhite: 0.03,
+  filmPriceHolo: 0.04,
+  filmPriceMetal: 0.08,
+  mountFilmPrice: 0.03,
+  designPrice: 5000,
+  editPrice: 3000,
+  showCost: false,
+};
+
+const STORAGE_KEY = 'kontora_calc_v4';
+
+function deepMerge(target, source){
+  const out = Object.assign({}, target);
+  for(const k in source){
+    if(source[k] && typeof source[k]==='object' && !Array.isArray(source[k])){
+      out[k] = deepMerge(target[k]||{}, source[k]);
+    } else {
+      out[k] = source[k];
+    }
+  }
+  return out;
+}
+
+function loadS(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      // migrate old labor field
+      if(parsed.rates?.labor !== undefined && parsed.rates?.laborPrint === undefined){
+        parsed.rates.laborPrint = parsed.rates.labor * 0.6;
+        parsed.rates.laborResin = parsed.rates.labor * 0.4;
+        delete parsed.rates.labor;
+      }
+      // migrate old packaging array
+      if(parsed.packaging !== undefined && parsed.pkgPrice === undefined){
+        parsed.pkgPrice = parsed.packaging[0]?.price ?? 5;
+        delete parsed.packaging;
+      }
+      // deep merge with DEFAULTS so any new keys are filled in
+      return deepMerge(DEFAULTS, parsed);
+    }
+  }catch(e){ console.warn('Settings load error:', e); }
+  // First launch — save defaults immediately
+  const def = JSON.parse(JSON.stringify(DEFAULTS));
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(def)); }catch(e){}
+  return def;
+}
+
+let S = loadS();
+
+/* ══════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════ */
+const ST = {
+  product:'sticker', length:100, width:100, qty:500, views:1,
+  film:'white',
+  is3d:false, isLam:false, isUrgent:false, isPkg:false, isPartner:false, isCut:false,
+  isDesign:false, isEdit:false, isMountFilm:false
+};
+
+/* ══════════════════════════════════════════════
+   QTY MARKUP — логарифмическая кривая
+   getMult(qty, isPack) → наценка к с/с
+   
+   Формула: maxM * (minM/maxM)^t, где
+   t = log(qty/qtyMin) / log(qtyMax/qtyMin), зажатый в [0,1]
+   
+   Результат: при малых тиражах — большой шаг,
+   при больших — маленький (кривая убывает быстро вначале и медленно в конце)
+══════════════════════════════════════════════ */
+function getMult(qty, isPack, is3d){
+  const mk     = is3d ? S.d3.markup : S.vinyl.markup;
+  const maxM   = isPack ? mk.packMax   : mk.stickerMax;
+  const minM   = isPack ? mk.packMin   : mk.stickerMin;
+  const qtyMin = 20;
+  const qtyMax = isPack ? 2000 : 3000;
+
+  // Qty below minimum — use minimum markup (price as if ordering 20)
+  if(qty <= qtyMin) return maxM;
+  if(qty >= qtyMax) return minM;
+
+  const t = Math.log(qty / qtyMin) / Math.log(qtyMax / qtyMin);
+  return maxM * Math.pow(minM / maxM, t);
+}
+
+/* Метка текущего тиража для бейджа */
+function getTierLabel(qty, isPack){
+  const qtyMax = isPack ? 2000 : 3000;
+  if(qty >= qtyMax) return `${qtyMax.toLocaleString('ru')}\u202F+ шт`;
+  return `${qty.toLocaleString('ru')}\u202F шт`;
+}
+
+/* Контрольные точки таблицы — стикеры */
+const TIERS_STICKER = [
+  {label:'20 – 49 шт',         from:20,   to:49,      repr:20},
+  {label:'50 – 99 шт',         from:50,   to:99,      repr:50},
+  {label:'100 – 199 шт',       from:100,  to:199,     repr:100},
+  {label:'200 – 299 шт',       from:200,  to:299,     repr:200},
+  {label:'300 – 499 шт',       from:300,  to:499,     repr:300},
+  {label:'500 – 749 шт',       from:500,  to:749,     repr:500},
+  {label:'750 – 999 шт',       from:750,  to:999,     repr:750},
+  {label:'1\u202F000 – 1\u202F499 шт', from:1000, to:1499, repr:1000},
+  {label:'1\u202F500 – 1\u202F999 шт', from:1500, to:1999, repr:1500},
+  {label:'2\u202F000 – 2\u202F499 шт', from:2000, to:2499, repr:2000},
+  {label:'2\u202F500 – 2\u202F999 шт', from:2500, to:2999, repr:2500},
+  {label:'3\u202F000 – 4\u202F999 шт', from:3000, to:4999,     repr:3000},
+  {label:'5\u202F000 – 9\u202F999 шт', from:5000, to:9999,     repr:5000},
+  {label:'10\u202F000 – 20\u202F000 шт', from:10000, to:Infinity, repr:10000},
+];
+
+/* Контрольные точки таблицы — стикерпаки */
+const TIERS_PACK = [
+  {label:'20 – 49 шт',         from:20,   to:49,      repr:20},
+  {label:'50 – 99 шт',         from:50,   to:99,      repr:50},
+  {label:'100 – 199 шт',       from:100,  to:199,     repr:100},
+  {label:'200 – 299 шт',       from:200,  to:299,     repr:200},
+  {label:'300 – 499 шт',       from:300,  to:499,     repr:300},
+  {label:'500 – 749 шт',       from:500,  to:749,     repr:500},
+  {label:'750 – 999 шт',       from:750,  to:999,     repr:750},
+  {label:'1\u202F000 – 1\u202F499 шт', from:1000, to:1499, repr:1000},
+  {label:'1\u202F500 – 1\u202F999 шт', from:1500, to:1999, repr:1500},
+  {label:'2\u202F000 – 4\u202F999 шт', from:2000, to:4999,     repr:2000},
+  {label:'5\u202F000 – 9\u202F999 шт', from:5000, to:9999,     repr:5000},
+  {label:'10\u202F000 – 20\u202F000 шт', from:10000, to:Infinity, repr:10000},
+];
+
+function getTiers(isPack){ return isPack ? TIERS_PACK : TIERS_STICKER; }
+
+/* ══════════════════════════════════════════════
+   COST FUNCTIONS
+   baseCostPerCm2(is3d, isLam, isPack) → ₽/см²
+
+   Стикер Винил:    film + ink + laborPrint + overhead + tax [+ lam]
+   Стикер 3D:       то же + resin×1.0 + laborResin×0.5
+   Стикерпак Винил: то же что Стикер Винил
+   Стикерпак 3D:    то же + resin×0.5 + laborResin×1.0
+
+   Ставки для Винил и 3D — независимые (S.vinyl.rates / S.d3.rates)
+══════════════════════════════════════════════ */
+function getFilmPrice(film){
+  if(film === 'holo')  return S.filmPriceHolo  || 0.04;
+  if(film === 'metal') return S.filmPriceMetal  || 0.08;
+  return S.filmPriceWhite || 0.03; // white / default
+}
+
+function baseCostPerCm2(is3d, isLam, isPack, film){
+  const r = is3d ? S.d3.rates : S.vinyl.rates;
+  const filmCost = getFilmPrice(film || 'white');
+  let c = filmCost + r.ink + r.laborPrint + r.overhead + r.tax;
+  if(isLam) c += r.lam;
+  if(is3d){
+    c += isPack ? r.laborResin : r.laborResin * 0.5;  // стикер ×0.5, пак полностью
+    c += isPack ? r.resin * 0.5 : r.resin;            // смола: пак ×0.5, стикер полностью
+  }
+  return c;
+}
+
+/* ── 4 canonical cost variants ── */
+function costVariants(){
+  const vr = S.vinyl.rates;
+  const dr = S.d3.rates;
+  const baseV = (S.filmPriceWhite||0.03) + vr.ink + vr.laborPrint + vr.overhead + vr.tax;
+  const baseD = (S.filmPriceWhite||0.03) + dr.ink + dr.laborPrint + dr.overhead + dr.tax;
+  return {
+    vinyl:     baseV,
+    vinyl3d:   baseD + dr.resin + dr.laborResin * 0.5,
+    packVinyl: baseV,
+    pack3d:    baseD + dr.resin * 0.5 + dr.laborResin,
+  };
+}
+
+/* ══════════════════════════════════════════════
+   PRICE CALCULATION
+══════════════════════════════════════════════ */
+function calcPrice(qty, st){
+  st = st || ST;
+  const isPack = st.product === 'pack';
+  const area   = (st.length * st.width) / 100;
+  const cost1  = baseCostPerCm2(st.is3d, st.isLam, isPack, st.film) * area;
+  const mult   = getMult(qty, isPack, st.is3d);
+  const base   = cost1 * mult;
+
+  let price1 = base;
+  if(st.isUrgent)  price1 *= (1 + S.options.urgency / 100);
+  if(st.isCut)     price1 *= (1 + S.options.cutting / 100);
+  if(st.isPartner) price1 *= (1 - S.options.partner / 100);
+
+  const pkgPer = st.isPkg ? S.pkgPrice : 0;
+  price1 += pkgPer;
+
+  const views = st.views || 1;
+  const viewsCost  = Math.max(0, views - 1) * (S.viewPrice || 1000);
+  const designCost    = (st.isDesign     ? (S.designPrice     || 5000) : 0);
+  const editCost      = (st.isEdit       ? (S.editPrice       || 3000) : 0);
+  const mountFilmCost = (st.isMountFilm  ? area * qty * (S.mountFilmPrice || 0.03) : 0);
+  const total = price1 * qty + viewsCost + designCost + editCost + mountFilmCost;
+
+  return { price1, total, viewsCost, cost1, mountFilmCost, area, base };
+}
+
+/* delta: сколько добавится к тиражу при ВКЛЮЧЕНИИ опции */
+function optDelta(optKey){
+  const prev = ST[optKey];
+  // Считаем цену с опцией ON и OFF
+  ST[optKey] = false;
+  const totalOff = calcPrice(Math.max(20, ST.qty)).total;
+  ST[optKey] = true;
+  const totalOn  = calcPrice(Math.max(20, ST.qty)).total;
+  ST[optKey] = prev; // восстанавливаем
+  return totalOn - totalOff; // положительное = надбавка, отрицательное = скидка
+}
+
+/* ══════════════════════════════════════════════
+   FORMAT
+══════════════════════════════════════════════ */
+function f(n, d=0){ return isFinite(n)&&!isNaN(n) ? n.toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g,'\u202F') : '—'; }
+
+/* ══════════════════════════════════════════════
+   RENDER CALC
+══════════════════════════════════════════════ */
+function render(){
+  const area = (ST.length * ST.width) / 100;
+  document.getElementById('area-val').textContent = f(area,1)+' см²';
+  const totalM2 = area * ST.qty / 10000;
+  document.getElementById('area-total-val').textContent = f(totalM2,3)+' м²';
+  renderPresets();
+
+  const {price1, total, cost1} = calcPrice(ST.qty);
+
+  document.getElementById('r-price1').textContent = f(price1,0)+' ₽';
+  document.getElementById('r-total').textContent  = f(total,0)+' ₽';
+  document.getElementById('r-price1-sub').textContent =
+    f(area,1)+' см²  ·  тираж '+ST.qty+' шт';
+  const viewsExtra = (ST.views||1) > 1
+    ? '  +'+f(calcPrice(ST.qty).viewsCost,0)+'₽ ('+ST.views+' вида)'
+    : '';
+  document.getElementById('r-total-sub').textContent =
+    ST.qty+' шт × '+f(price1,1)+' ₽'+viewsExtra;
+
+  document.getElementById('r-cost1').textContent =
+    f(cost1,1)+' ₽';
+  document.getElementById('r-markup').textContent =
+    cost1 > 0 ? '×'+( price1/cost1).toFixed(2) : '—';
+  document.getElementById('r-cost-total').textContent =
+    f(cost1 * ST.qty, 0)+' ₽';
+
+  renderBadges(area);
+  renderDeltas();
+  renderTable();
+  renderSummary();
+
+  document.getElementById('ptag').textContent =
+    ST.product==='sticker' ? 'Стикер' : 'Стикерпак';
+}
+
+function renderBadges(area){
+  const isPack = ST.product === 'pack';
+  const mult   = getMult(ST.qty, isPack, ST.is3d);
+  const totalM2 = area * ST.qty / 10000;
+  let h = `<span class="badge base">📐 ${f(area,1)} см²</span>`;
+  h += `<span class="badge base">📦 ${getTierLabel(ST.qty, isPack)}</span>`;
+  h += `<span class="badge base">🗂 ${f(totalM2,2)} м² тиража</span>`;
+  if(S.showCost) h += `<span class="badge base">×${mult.toFixed(2)} к с/с</span>`;
+  if(ST.film === 'holo')  h += `<span class="badge add">🌈 Голографика</span>`;
+  if(ST.film === 'metal') h += `<span class="badge add">✨ Металлизированная</span>`;
+  if(ST.isMountFilm) h += `<span class="badge add">🔧 Монтажная +${f((ST.length*ST.width/100)*ST.qty*(S.mountFilmPrice||0.03),0)} ₽</span>`;
+  if((ST.views||1) > 1) h += `<span class="badge add">🖼 ${ST.views} вида +${f((ST.views-1)*(S.viewPrice||1000),0)} ₽</span>`;
+  if(ST.is3d)      h += `<span class="badge add">💎 3D заливка</span>`;
+  if(ST.isLam)     h += `<span class="badge add">✨ Ламинация</span>`;
+  if(ST.isUrgent)  h += `<span class="badge add">⚡ Срочность +${S.options.urgency}%</span>`;
+  if(ST.isPkg)     h += `<span class="badge add">🛍 Упаковка +${f(S.pkgPrice,1)} ₽/шт</span>`;
+  if(ST.isCut)     h += `<span class="badge add">✂️ Резка +${S.options.cutting}%</span>`;
+  if(ST.isPartner) h += `<span class="badge disc">🤝 Партнёр −${S.options.partner}%</span>`;
+  if(ST.isDesign)  h += `<span class="badge add">🎨 Разработка +${f(S.designPrice||5000,0)} ₽</span>`;
+  if(ST.isEdit)    h += `<span class="badge add">✏️ Правка +${f(S.editPrice||3000,0)} ₽</span>`;
+  document.getElementById('badges-row').innerHTML = h;
+}
+
+function renderDeltas(){
+  // For each option: compute what happens if it's toggled
+  // We show the delta of total price (positive = adds cost, negative = saves)
+  const opts = [
+    {key:'is3d',    el:'dlt-3d',  disc:false},
+    {key:'isLam',   el:'dlt-lam', disc:false},
+    {key:'isUrgent',el:'dlt-urg', disc:false},
+    {key:'isPkg',   el:'dlt-pkg', disc:false},
+    {key:'isPartner',el:'dlt-prt',disc:true},
+    {key:'isCut',   el:'dlt-cut', disc:false},
+    {key:'isDesign',    el:'dlt-design', disc:false},
+    {key:'isEdit',     el:'dlt-edit',   disc:false},
+    {key:'isMountFilm', el:'dlt-mf',     disc:false},
+  ];
+
+  opts.forEach(({key,el,disc})=>{
+    const delta = optDelta(key); // всегда: ON - OFF
+    const chip  = document.getElementById(el);
+    const abs   = Math.abs(delta);
+
+    if(abs < 0.05){
+      chip.textContent = '—';
+      chip.className   = 'delta-chip zero';
+      return;
+    }
+
+    if(delta < 0){
+      // скидка (партнёр)
+      chip.textContent = `−${f(abs,0)} ₽`;
+      chip.className   = 'delta-chip disc';
+    } else {
+      chip.textContent = `+${f(abs,0)} ₽`;
+      chip.className   = 'delta-chip add';
+    }
+  });
+}
+
+function renderTable(){
+  const isPack = ST.product === 'pack';
+  const tiers  = getTiers(isPack);
+  let h='';
+  tiers.forEach(tier=>{
+    const rq = tier.repr;
+    const {price1, cost1} = calcPrice(rq);
+    const isCur  = ST.qty>=tier.from && ST.qty<=tier.to;
+    const multX  = cost1 > 0 ? (price1/cost1).toFixed(2) : '—';
+    const mkX    = getMult(rq, isPack, ST.is3d).toFixed(2);
+    h += `<tr class="${isCur?'cur':''}">
+      <td>${tier.label}</td>
+      <td><span class="p1">${f(price1,1)} ₽</span></td>
+      <td><span class="pt">${f(price1*rq,0)} ₽</span></td>
+      <td class="cost-field"><span class="mbadge">×${mkX} наценка</span></td>
+    </tr>`;
+  });
+  document.getElementById('ptbody').innerHTML = h;
+}
+
+/* ══════════════════════════════════════════════
+   UI HANDLERS (CALC)
+══════════════════════════════════════════════ */
+const PRESETS = {
+  sticker: [
+    {label:'30×30', l:30,  w:30},
+    {label:'50×50', l:50,  w:50},
+    {label:'100×100', l:100, w:100},
+  ],
+  pack: [
+    {label:'А6', l:105, w:148},
+    {label:'А5', l:148, w:210},
+  ]
+};
+
+function renderPresets(){
+  const presets = PRESETS[ST.product];
+  const L = ST.length, W = ST.width;
+  document.getElementById('size-presets').innerHTML = presets.map(p => {
+    const isActive = p.l === L && p.w === W;
+    return `<button class="size-preset${isActive?' active-preset':''}"
+      onclick="applyPreset(${p.l},${p.w})">${p.label}</button>`;
+  }).join('');
+}
+
+function applyPreset(l, w){
+  ST.length = l; ST.width = w;
+  document.getElementById('il').value = l;
+  document.getElementById('iw').value = w;
+  render();
+}
+
+function setProduct(p){
+  ST.product = p;
+  document.getElementById('pb-sticker').classList.toggle('active', p==='sticker');
+  document.getElementById('pb-pack').classList.toggle('active', p==='pack');
+  // Скрыть резку для стикерпаков
+  document.getElementById('or-cut').style.display = p==='pack' ? 'none' : '';
+  if(p==='pack' && ST.isCut){
+    ST.isCut = false;
+    document.getElementById('or-cut').classList.remove('on');
+    document.getElementById('swcut').classList.remove('on');
+  }
+  // Сбросить подсветку пресета — при смене типа прежний размер не совпадает с новыми кнопками
+  // Пресет остаётся но без принудительной смены размера (пользователь выберет сам)
+  render();
+}
+
+function onDim(){
+  ST.length = parseFloat(document.getElementById('il').value)||100;
+  ST.width  = parseFloat(document.getElementById('iw').value)||100;
+  render();
+}
+
+function onQtyInput(){
+  const el = document.getElementById('iq');
+  const raw = el.value;
+  let v = parseInt(raw);
+  // Allow empty input while typing — wait for user
+  if(isNaN(v) || raw === ''){ el.classList.remove('warn'); return; }
+  // Clamp upper bound mid-typing
+  if(v > 20000) { v = 20000; el.value = v; }
+  // If value is 1-19 — highlight and don't recalc yet
+  if(v < 20){
+    el.classList.add('warn'); // visual hint: value below minimum
+    return;
+  }
+  el.classList.remove('warn');
+  ST.qty = v;
+  document.getElementById('qslider').value = Math.min(20000, v);
+  render();
+}
+
+// Force minimum 20 when user finishes typing (blur / Enter)
+function onQtyBlur(){
+  const el = document.getElementById('iq');
+  let v = parseInt(el.value);
+  if(isNaN(v) || v < 20) v = 20;
+  if(v > 20000) v = 20000;
+  el.value = v;
+  el.classList.remove('warn');
+  ST.qty = v;
+  document.getElementById('qslider').value = v;
+  render();
+}
+
+function onSlider(){
+  let v = parseInt(document.getElementById('qslider').value);
+  if(isNaN(v)) v = 20;
+  v = Math.max(20, Math.min(20000, v));
+  ST.qty = v;
+  document.getElementById('iq').value = v;
+  render();
+}
+
+function togOpt(key,rowId,swId){
+  ST[key]=!ST[key];
+  document.getElementById(rowId).classList.toggle('on',ST[key]);
+  document.getElementById(swId).classList.toggle('on',ST[key]);
+  render();
+}
+
+/* ══════════════════════════════════════════════
+   PAGE NAV
+══════════════════════════════════════════════ */
+const SECTIONS = ['calc','kb','mat','admin'];
+
+function goSection(name){
+  SECTIONS.forEach(s => {
+    const pg = document.getElementById('page-' + s);
+    const btn = document.getElementById('pnav-' + s);
+    if(pg)  pg.classList.toggle('active', s === name);
+    if(btn) btn.classList.toggle('active', s === name);
+  });
+  if(name === 'admin'){
+    loadAdminForm();
+    applyLockState();
+  }
+  if(name === 'calc') render();
+  window.scrollTo(0,0);
+}
+
+// keep backwards compat
+function goAdmin(){ goSection('admin'); }
+function goCalc(){  goSection('calc'); }
+
+/* ══════════════════════════════════════════════
+   ADMIN FORM
+══════════════════════════════════════════════ */
+function getAdminMarkup(){
+  // kept for compatibility with markup curves in updateAdminPreview
+  return {
+    stickerMax: parseFloat(document.getElementById('af-v-sticker-max').value)||5,
+    stickerMin: parseFloat(document.getElementById('af-v-sticker-min').value)||1.8,
+    packMax:    parseFloat(document.getElementById('af-v-pack-max').value)||3.5,
+    packMin:    parseFloat(document.getElementById('af-v-pack-min').value)||1.8,
+  };
+}
+
+function loadAdminForm(){
+  const vr = S.vinyl.rates, dr = S.d3.rates;
+  const vm = S.vinyl.markup, dm = S.d3.markup;
+
+  // Shared rates (общие для Vinyl и 3D)
+  document.getElementById('af-s-lam').value         = vr.lam;
+  document.getElementById('af-s-ink').value         = vr.ink;
+  document.getElementById('af-s-laborPrint').value  = vr.laborPrint;
+  document.getElementById('af-s-laborResin').value  = dr.laborResin;
+  // Vinyl-only
+  document.getElementById('af-v-overhead').value    = vr.overhead;
+  document.getElementById('af-v-tax').value         = vr.tax;
+  // Vinyl markup
+  document.getElementById('af-v-sticker-max').value = vm.stickerMax;
+  document.getElementById('af-v-sticker-min').value = vm.stickerMin;
+  document.getElementById('af-v-pack-max').value    = vm.packMax;
+  document.getElementById('af-v-pack-min').value    = vm.packMin;
+
+  // 3D-only
+  document.getElementById('af-d-resin').value       = dr.resin;
+  document.getElementById('af-d-overhead').value    = dr.overhead;
+  document.getElementById('af-d-tax').value         = dr.tax;
+  // 3D markup
+  document.getElementById('af-d-sticker-max').value = dm.stickerMax;
+  document.getElementById('af-d-sticker-min').value = dm.stickerMin;
+  document.getElementById('af-d-pack-max').value    = dm.packMax;
+  document.getElementById('af-d-pack-min').value    = dm.packMin;
+
+  // Options
+  document.getElementById('af-urgency').value = S.options.urgency;
+  document.getElementById('af-show-cost').checked = S.showCost || false;
+  applyCostVisibility();
+  document.getElementById('af-cutting').value = S.options.cutting;
+  document.getElementById('af-partner').value = S.options.partner;
+  document.getElementById('af-pkg').value       = S.pkgPrice;
+  document.getElementById('af-film-white').value = S.filmPriceWhite || 0.03;
+  document.getElementById('af-film-holo').value  = S.filmPriceHolo  || 0.04;
+  document.getElementById('af-film-metal').value = S.filmPriceMetal || 0.08;
+  document.getElementById('af-mount-film').value  = S.mountFilmPrice || 0.03;
+  document.getElementById('af-view-price').value  = S.viewPrice || 1000;
+  document.getElementById('af-design-price').value = S.designPrice || 5000;
+  document.getElementById('af-edit-price').value   = S.editPrice || 3000;
+
+  updateAdminPreview();
+
+  const allIds = [
+    'af-s-lam','af-s-ink','af-s-laborPrint','af-s-laborResin',
+    'af-v-overhead','af-v-tax',
+    'af-v-sticker-max','af-v-sticker-min','af-v-pack-max','af-v-pack-min',
+    'af-d-resin','af-d-overhead','af-d-tax',
+    'af-d-sticker-max','af-d-sticker-min','af-d-pack-max','af-d-pack-min',
+    'af-urgency','af-cutting','af-partner','af-pkg','af-view-price','af-design-price','af-edit-price',
+    'af-film-white','af-film-holo','af-film-metal','af-mount-film'
+  ];
+  allIds.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.oninput = updateAdminPreview;
+  });
+}
+
+function getAdminRates(){
+  // Shared — общие ставки для обоих типов
+  const sLam        = parseFloat(document.getElementById('af-s-lam').value)||0;
+  const sInk        = parseFloat(document.getElementById('af-s-ink').value)||0;
+  const sLaborPrint = parseFloat(document.getElementById('af-s-laborPrint').value)||0;
+  const sLaborResin = parseFloat(document.getElementById('af-s-laborResin').value)||0;
+  return{
+    vinyl:{
+      rates:{
+        lam:         sLam,
+        ink:         sInk,
+        laborPrint:  sLaborPrint,
+        overhead:    parseFloat(document.getElementById('af-v-overhead').value)||0,
+        tax:         parseFloat(document.getElementById('af-v-tax').value)||0,
+      },
+      markup:{
+        stickerMax:  parseFloat(document.getElementById('af-v-sticker-max').value)||5,
+        stickerMin:  parseFloat(document.getElementById('af-v-sticker-min').value)||1.8,
+        packMax:     parseFloat(document.getElementById('af-v-pack-max').value)||3.5,
+        packMin:     parseFloat(document.getElementById('af-v-pack-min').value)||1.8,
+      }
+    },
+    d3:{
+      rates:{
+        lam:         sLam,
+        ink:         sInk,
+        laborPrint:  sLaborPrint,
+        resin:       parseFloat(document.getElementById('af-d-resin').value)||0,
+        laborResin:  sLaborResin,
+        overhead:    parseFloat(document.getElementById('af-d-overhead').value)||0,
+        tax:         parseFloat(document.getElementById('af-d-tax').value)||0,
+      },
+      markup:{
+        stickerMax:  parseFloat(document.getElementById('af-d-sticker-max').value)||5,
+        stickerMin:  parseFloat(document.getElementById('af-d-sticker-min').value)||1.8,
+        packMax:     parseFloat(document.getElementById('af-d-pack-max').value)||3.5,
+        packMin:     parseFloat(document.getElementById('af-d-pack-min').value)||1.8,
+      }
+    }
+  };
+}
+
+function updateAdminPreview(){
+  const savedVinyl = S.vinyl, savedD3 = S.d3;
+
+  // Применяем значения из формы временно
+  const tempAll = getAdminRates();
+  S.vinyl = tempAll.vinyl;
+  S.d3    = tempAll.d3;
+
+  const vr = S.vinyl.rates, dr = S.d3.rates;
+  const cv = costVariants();
+
+  // Карточки себестоимости
+  function renderCostMatrix(elId, cards){
+    const el = document.getElementById(elId);
+    if(!el) return;
+    el.innerHTML = cards.map(c =>
+      `<div class="cm-card">
+        <div class="cm-tag">${c.tag}</div>
+        <div class="cm-val" style="color:${c.color}">${f(c.val, 4)} ₽</div>
+        <div class="cm-sub">за 1 кв.см</div>
+        <div class="cm-break">
+          ${c.lines.map(l =>
+            `<div class="cm-line">
+              <span class="cn">${l.n}${l.note ? ` <span style="color:var(--muted);font-size:9px">(${l.note})</span>` : ''}</span>
+              <span class="cv">${f(l.v, 4)}</span>
+            </div>`
+          ).join('')}
+        </div>
+      </div>`
+    ).join('');
+  }
+
+  renderCostMatrix('cost-matrix-vinyl', [
+    {
+      tag: 'Стикер Винил', val: cv.vinyl, color: 'var(--text)',
+      lines: [
+        {n:'Плёнка (базовая)', v: S.filmPriceWhite||0.03},
+        {n:'Краска',      v: vr.ink},
+        {n:'Труд печать', v: vr.laborPrint},
+        {n:'Накладные',   v: vr.overhead},
+        {n:'Налог',       v: vr.tax},
+      ]
+    },
+    {
+      tag: 'Стикерпак Винил', val: cv.packVinyl, color: 'var(--blue)',
+      lines: [
+        {n:'Плёнка (базовая)', v: S.filmPriceWhite||0.03},
+        {n:'Краска',      v: vr.ink},
+        {n:'Труд печать', v: vr.laborPrint},
+        {n:'Накладные',   v: vr.overhead},
+        {n:'Налог',       v: vr.tax},
+        {n:'Смола',       v: 0, note: '0 — нет заливки'},
+      ]
+    },
+  ]);
+
+  renderCostMatrix('cost-matrix-3d', [
+    {
+      tag: 'Стикер 3D', val: cv.vinyl3d, color: 'var(--lime)',
+      lines: [
+        {n:'Плёнка (базовая)', v: S.filmPriceWhite||0.03},
+        {n:'Краска',       v: dr.ink},
+        {n:'Труд печать',  v: dr.laborPrint},
+        {n:'Труд заливка', v: dr.laborResin * 0.5, note: '×0.5'},
+        {n:'Смола',        v: dr.resin,             note: '×1.0'},
+        {n:'Накладные',    v: dr.overhead},
+        {n:'Налог',        v: dr.tax},
+      ]
+    },
+    {
+      tag: 'Стикерпак 3D', val: cv.pack3d, color: 'var(--gold)',
+      lines: [
+        {n:'Плёнка (базовая)', v: S.filmPriceWhite||0.03},
+        {n:'Краска',       v: dr.ink},
+        {n:'Труд печать',  v: dr.laborPrint},
+        {n:'Труд заливка', v: dr.laborResin,      note: '×1.0 (полный)'},
+        {n:'Смола',        v: dr.resin * 0.5,     note: '×0.5'},
+        {n:'Накладные',    v: dr.overhead},
+        {n:'Налог',        v: dr.tax},
+      ]
+    },
+  ]);
+
+  // Кривые наценок
+  const curveQtys     = [50, 100, 200, 500, 1000, 2000, 3000];
+  const curveQtysPack = [50, 100, 200, 500, 1000, 2000];
+
+  function renderCurve(elId, qtys, isPack, is3d){
+    const el = document.getElementById(elId);
+    if(!el) return;
+    const mk   = is3d ? S.d3.markup : S.vinyl.markup;
+    const maxM = isPack ? mk.packMax    : mk.stickerMax;
+    const minM = isPack ? mk.packMin    : mk.stickerMin;
+    el.innerHTML = qtys.map(q => {
+      const m   = getMult(q, isPack, is3d);
+      const pct = maxM > minM ? ((m - minM) / (maxM - minM)) * 100 : 50;
+      return `<div style="display:flex;align-items:center;gap:8px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted2);width:36px;flex-shrink:0">${q>=1000?(q/1000).toFixed(0)+'k':q}</span>
+        <div style="flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${Math.max(pct,2).toFixed(1)}%;background:var(--lime);border-radius:3px;transition:width .3s"></div>
+        </div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--lime);width:34px;text-align:right;flex-shrink:0">×${m.toFixed(2)}</span>
+      </div>`;
+    }).join('');
+  }
+
+  renderCurve('markup-curve-sticker',    curveQtys,     false, false);
+  renderCurve('markup-curve-pack',       curveQtysPack, true,  false);
+  renderCurve('markup-curve-sticker-3d', curveQtys,     false, true);
+  renderCurve('markup-curve-pack-3d',    curveQtysPack, true,  true);
+
+  // Таблица предпросмотра А6 105×148 мм = 155.4 см²
+  const area = 155.4;
+  let h = '';
+  TIERS_STICKER.forEach(tier => {
+    const rq   = tier.repr;
+    const ms_v = getMult(rq, false, false);
+    const ms_d = getMult(rq, false, true);
+    const mp_v = getMult(rq, true,  false);
+    const mp_d = getMult(rq, true,  true);
+    const vc  = cv.vinyl     * area;
+    const sc  = cv.vinyl3d   * area;
+    const pvc = cv.packVinyl * area;
+    const pc  = cv.pack3d    * area;
+    h += `<tr>
+      <td>${tier.label}</td>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--muted2)">${f(vc,1)} ₽</td>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--text);font-weight:700">${f(vc*ms_v,1)} ₽ <span style="color:var(--muted);font-size:10px">×${ms_v.toFixed(2)}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--lime);font-weight:700">${f(sc*ms_d,1)} ₽ <span style="color:var(--muted);font-size:10px">×${ms_d.toFixed(2)}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--blue);font-weight:700">${f(pvc*mp_v,1)} ₽</td>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--gold);font-weight:700;padding-right:22px">${f(pc*mp_d,1)} ₽</td>
+    </tr>`;
+  });
+  document.getElementById('admin-ptbody').innerHTML = h;
+
+  // Восстанавливаем настройки
+  S.vinyl = savedVinyl;
+  S.d3    = savedD3;
+}
+
+/* ── SAVE ── */
+function saveSettings(){
+  const all = getAdminRates();
+  S.vinyl   = all.vinyl;
+  S.d3      = all.d3;
+  S.options.urgency = parseInt(document.getElementById('af-urgency').value)||0;
+  S.options.cutting = parseInt(document.getElementById('af-cutting').value)||0;
+  S.options.partner = parseInt(document.getElementById('af-partner').value)||0;
+  S.pkgPrice        = parseFloat(document.getElementById('af-pkg').value)||0;
+  S.filmPriceWhite  = parseFloat(document.getElementById('af-film-white').value)||0.03;
+  S.filmPriceHolo   = parseFloat(document.getElementById('af-film-holo').value)||0.04;
+  S.filmPriceMetal  = parseFloat(document.getElementById('af-film-metal').value)||0.08;
+  S.mountFilmPrice  = parseFloat(document.getElementById('af-mount-film').value)||0.03;
+  S.viewPrice       = parseFloat(document.getElementById('af-view-price').value)||1000;
+  S.designPrice     = parseFloat(document.getElementById('af-design-price').value)||5000;
+  S.editPrice       = parseFloat(document.getElementById('af-edit-price').value)||3000;
+  S.showCost        = document.getElementById('af-show-cost').checked;
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(S));
+  syncDescriptions();
+  applyCostVisibility();
+
+  const btn=document.getElementById('save-btn');
+  btn.textContent='✓ Сохранено';
+  btn.classList.add('done');
+  setTimeout(()=>{btn.textContent='💾 Сохранить';btn.classList.remove('done');},2000);
+}
+
+function syncDescriptions(){
+  document.getElementById('desc-urg').textContent = `Доплата +${S.options.urgency}% к стоимости тиража`;
+  document.getElementById('desc-cut').textContent = `Доплата +${S.options.cutting}% к стоимости тиража`;
+  document.getElementById('desc-prt').textContent = `Скидка для партнёров −${S.options.partner}%`;
+  document.getElementById('desc-pkg').textContent    = `Индивидуальная упаковка, ${f(S.pkgPrice,1)} ₽ за стикер`;
+  document.getElementById('desc-design').textContent = `Разработка по ТЗ, ${f(S.designPrice||5000,0)} ₽`;
+  document.getElementById('desc-edit').textContent   = `Доработка существующего макета, ${f(S.editPrice||3000,0)} ₽`;
+  document.getElementById('desc-mf').textContent      = `Плёнка для монтажа, ${f(S.mountFilmPrice||0.03,3)} ₽/см²`;
+}
+
+/* ══════════════════════════════════════════════
+   HELP MODAL
+══════════════════════════════════════════════ */
+function openHelp(){
+  // v1s: only guide + changelog — no cost/formula tabs
+  switchTab('guide');
+  document.getElementById('help-overlay').classList.remove('hidden');
+}
+
+function switchTab(name){
+  document.querySelectorAll('.h-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.h-tab-content').forEach(c => c.classList.remove('active'));
+  const btn = document.querySelector(`.h-tab[onclick="switchTab('${name}')"]`);
+  if(btn) btn.classList.add('active');
+  const content = document.getElementById('tab-' + name);
+  if(content) content.classList.add('active');
+}
+
+function closeHelp(e){
+  if(!e || e.target === document.getElementById('help-overlay')){
+    document.getElementById('help-overlay').classList.add('hidden');
+  }
+}
+
+/* ══════════════════════════════════════════════
+   LOCK / PASSWORD
+══════════════════════════════════════════════ */
+const ADMIN_PWD = 'kontora';
+let adminUnlocked = false;
+
+function applyLockState(){
+  const wrap  = document.getElementById('page-admin');
+  const btn   = document.getElementById('lock-btn');
+  const icon  = document.getElementById('lock-icon');
+  const label = document.getElementById('lock-label');
+  const saveb = document.getElementById('save-btn');
+  const sub   = document.getElementById('adm-sub-text');
+
+  if(adminUnlocked){
+    wrap.classList.remove('admin-locked');
+    btn.classList.add('unlocked');
+    icon.textContent  = '🔓';
+    label.textContent = 'Разблокировано';
+    saveb.style.display = '';
+    sub.textContent = 'Редактирование активно — не забудьте сохранить';
+  } else {
+    wrap.classList.add('admin-locked');
+    btn.classList.remove('unlocked');
+    icon.textContent  = '🔒';
+    label.textContent = 'Заблокировано';
+    saveb.style.display = 'none';
+    sub.textContent = 'Страница защищена — нажмите 🔒 чтобы разблокировать';
+  }
+}
+
+function toggleLock(){
+  if(adminUnlocked){
+    // Lock it back
+    adminUnlocked = false;
+    applyLockState();
+  } else {
+    // Show password modal
+    document.getElementById('pwd-overlay').classList.remove('hidden');
+    document.getElementById('pwd-input').value = '';
+    document.getElementById('pwd-error').classList.add('hidden');
+    setTimeout(()=>document.getElementById('pwd-input').focus(), 80);
+  }
+}
+
+function checkPwd(){
+  const val = document.getElementById('pwd-input').value;
+  if(val === ADMIN_PWD){
+    adminUnlocked = true;
+    document.getElementById('pwd-overlay').classList.add('hidden');
+    applyLockState();
+  } else {
+    const err = document.getElementById('pwd-error');
+    err.classList.remove('hidden');
+    document.getElementById('pwd-input').select();
+  }
+}
+
+function closePwdModal(e){
+  if(!e || e.target===document.getElementById('pwd-overlay')){
+    document.getElementById('pwd-overlay').classList.add('hidden');
+  }
+}
+
+/* ══════════════════════════════════════════════
+   THEME
+══════════════════════════════════════════════ */
+let isLight = localStorage.getItem('sticker_theme') === 'light';
+
+function applyTheme(){
+  document.body.classList.toggle('light', isLight);
+}
+
+function toggleTheme(){
+  isLight = !isLight;
+  localStorage.setItem('sticker_theme', isLight ? 'light' : 'dark');
+  applyTheme();
+}
+
+
+/* ══════════════════════════════════════════════
+   ORDER SUMMARY
+══════════════════════════════════════════════ */
+function renderSummary(){
+  const isPack  = ST.product === 'pack';
+  const area    = (ST.length * ST.width) / 100;
+  const {price1, total} = calcPrice(ST.qty);
+
+  const productName = isPack ? 'Стикерпак' : 'Стикер';
+  const typeName    = ST.is3d ? '3D' : 'Винил';
+  const lamName     = ST.isLam ? '+лам' : '';
+  const filmLabel   = ST.film === 'holo' ? 'Голо' : ST.film === 'metal' ? 'Металл' : '';
+
+  // ── Main params ──
+  const views = ST.views || 1;
+  const rows = [
+    [productName,            typeName + (lamName ? ' ' + lamName : '') + (filmLabel ? ' · ' + filmLabel : '')],
+    [ST.length + '×' + ST.width + ' мм', f(area,1) + ' см²'],
+    ['Тираж',                f(ST.qty,0) + ' шт'],
+    ...(views > 1 ? [['Видов', views + ' (+'+f((views-1)*(S.viewPrice||1000),0)+'₽)']] : []),
+    ['Цена / шт',            f(price1,1) + ' ₽'],
+  ];
+
+  let paramsHtml = '';
+  rows.forEach(([label, val]) => {
+    paramsHtml += `<div class="hs-row">
+      <span class="hs-row-label">${label}</span>
+      <span class="hs-row-val">${val}</span>
+    </div>`;
+  });
+  document.getElementById('summary-params').innerHTML = paramsHtml;
+
+  // ── Active options ──
+  const activeOpts = [];
+  if(ST.isUrgent)  activeOpts.push({ name:'Срочность',    pct:'+'+S.options.urgency+'%',  cls:'add',  key:'isUrgent' });
+  if(ST.isCut)     activeOpts.push({ name:'Резка',         pct:'+'+S.options.cutting+'%', cls:'add',  key:'isCut' });
+  if(ST.isPartner) activeOpts.push({ name:'Партнёр',       pct:'−'+S.options.partner+'%', cls:'disc', key:'isPartner' });
+  if(ST.isPkg)     activeOpts.push({ name:'Упаковка',      pct:'+'+S.pkgPrice+'₽/шт',     cls:'add',  key:'isPkg' });
+  if(ST.isDesign)  activeOpts.push({ name:'Разработка макета', pct:'+'+(S.designPrice||5000)+'₽', cls:'add', key:'isDesign' });
+  if(ST.isEdit)    activeOpts.push({ name:'Правка макета',     pct:'+'+(S.editPrice||3000)+'₽',   cls:'add', key:'isEdit' });
+  if(ST.isMountFilm) activeOpts.push({ name:'Монтажная плёнка', pct:'+'+(S.mountFilmPrice||0.03)+'₽/см²', cls:'add', key:'isMountFilm' });
+
+  if(activeOpts.length === 0){
+    document.getElementById('summary-opts').innerHTML =
+      '<div class="hs-empty">Без опций</div>';
+  } else {
+    let optsHtml = '';
+    activeOpts.forEach(opt => {
+      const delta = Math.abs(optDelta(opt.key));
+      const sign  = opt.cls === 'disc' ? '−' : '+';
+      optsHtml += `<div class="hs-opt">
+        <span class="hs-opt-name">${opt.name} <span style="opacity:.55">${opt.pct}</span></span>
+        <span class="hs-opt-delta ${opt.cls}">${sign}${f(delta,0)}₽</span>
+      </div>`;
+    });
+    document.getElementById('summary-opts').innerHTML = optsHtml;
+  }
+
+  // ── Total ──
+  document.getElementById('summary-total').textContent = f(total,0) + ' ₽';
+}
+
+function copySummary(){
+  const isPack  = ST.product === 'pack';
+  const area    = (ST.length * ST.width) / 100;
+  const {price1, total} = calcPrice(ST.qty);
+
+  const productName = isPack ? 'Стикерпак' : 'Стикер';
+  const typeName    = ST.is3d ? '3D (со смолой)' : 'Виниловый';
+  const lamName     = ST.isLam ? ' + ламинация' : '';
+  const copyFilm    = ST.film === 'holo' ? ' · Голографическая' : ST.film === 'metal' ? ' · Металлизированная' : '';
+
+  const line = '─────────────────────────';
+  let text = `Расчёт стоимости — Контора
+${line}
+`;
+  text += `Продукт:       ${productName} · ${typeName}${lamName}
+`;
+  text += `Размер:        ${ST.length} × ${ST.width} мм (${f(area,1)} см²)
+`;
+  text += `Тираж:         ${f(ST.qty,0)} шт
+`;
+  text += `Цена / шт:     ${f(price1,1)} ₽
+`;
+
+  const activeOpts = [];
+  if(ST.isUrgent)  activeOpts.push(`Срочность +${S.options.urgency}%`);
+  if(ST.isCut)     activeOpts.push(`Поштучная резка +${S.options.cutting}%`);
+  if(ST.isPartner) activeOpts.push(`Партнёрская скидка −${S.options.partner}%`);
+  if(ST.isPkg)     activeOpts.push(`Упаковка в пакетик +${S.pkgPrice}₽/шт`);
+  if(ST.isDesign)  activeOpts.push(`Разработка макета +${S.designPrice||5000}₽`);
+  if(ST.isEdit)    activeOpts.push(`Правка макета +${S.editPrice||3000}₽`);
+  if(ST.isMountFilm) activeOpts.push(`Монтажная плёнка +${f((ST.length*ST.width/100)*ST.qty*(S.mountFilmPrice||0.03),0)}₽`);
+
+  if(activeOpts.length > 0){
+    text += `${line}
+Доп. опции:
+`;
+    activeOpts.forEach(o => { text += `• ${o}
+`; });
+  }
+
+  text += `${line}
+Итого к оплате: ${f(total,0)} ₽`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    const ico = document.getElementById('copy-icon');
+    const lbl = document.getElementById('copy-label');
+    btn.classList.add('copied');
+    ico.textContent = '✓';
+    if(lbl) lbl.textContent = ' OK';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      ico.textContent = '📋';
+      if(lbl) lbl.textContent = ' Скопировать';
+    }, 2000);
+  });
+}
+
+function onViews(){
+  let v = parseInt(document.getElementById('iviews').value) || 1;
+  v = Math.min(9, Math.max(1, v));
+  ST.views = v;
+  document.getElementById('iviews').value = v;
+  updateViewsHint();
+  render();
+}
+
+function changeViews(delta){
+  const el = document.getElementById('iviews');
+  let v = Math.min(9, Math.max(1, (parseInt(el.value)||1) + delta));
+  el.value = v;
+  ST.views = v;
+  updateViewsHint();
+  render();
+}
+
+function updateViewsHint(){
+  const v = ST.views || 1;
+  const price = S.viewPrice || 1000;
+  const hint = document.getElementById('views-hint');
+  if(!hint) return;
+  if(v <= 1){
+    hint.textContent = '1 вид — без доплаты';
+    hint.style.color = '';
+  } else {
+    const extra = (v - 1) * price;
+    hint.textContent = v + ' вида — +'+ f(extra, 0) +' ₽ к тиражу';
+    hint.style.color = 'var(--gold)';
+  }
+}
+
+/* ══════════════════════════════════════════════
+   KB ACCORDION
+══════════════════════════════════════════════ */
+function kbToggle(el){
+  el.classList.toggle('open');
+}
+
+function setFilm(f){
+  ST.film = f;
+  ['white','holo','metal'].forEach(k => {
+    const btn = document.getElementById('fb-'+k);
+    if(btn) btn.classList.toggle('active', k===f);
+  });
+  render();
+}
+/* ══════════════════════════════════════════════
+   COST VISIBILITY
+══════════════════════════════════════════════ */
+function applyCostVisibility(){
+  const show = S.showCost ||
+    (document.getElementById('af-show-cost') &&
+     document.getElementById('af-show-cost').checked);
+  document.body.classList.toggle('show-cost', !!show);
+  render(); // обновить бейджи и таблицу
+}
+
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
+applyTheme();
+applyLockState();
+syncDescriptions();
+S.showCost = S.showCost || false;
+applyCostVisibility();
+updateViewsHint();
+
+/* ── ESC closes help modal ── */
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape'){
+    const modal = document.getElementById('help-modal') || document.querySelector('.h-modal');
+    if(modal && (modal.style.display === 'flex' || modal.classList.contains('open'))){
+      if(typeof closeHelp === 'function') closeHelp();
+    }
+  }
+});
+</script>
+</body>
+</html>
